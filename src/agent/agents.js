@@ -1,6 +1,6 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 
-import {default as config} from "../config.js"
+import {default as config} from "../../config.js"
 
 
 const client = new DeliverooApi(
