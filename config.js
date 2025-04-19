@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
+import path from 'path';
 
-const envLoaded = config({ path: '../../.env' });  
+const envLoaded = config({ path: path.resolve(process.cwd(), '.env') });  
 
 if (envLoaded.error) {
     console.error("❌ Error loading .env:", envLoaded.error);
