@@ -1,13 +1,17 @@
-const config = {
+import { config } from 'dotenv';
 
-    host: "http://localhost:8080",
-    // host: "https://deliveroojs.onrender.com",
+const envLoaded = config({ path: '../../.env' });  
 
-    // Jonathan
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc1MDBmYiIsIm5hbWUiOiJKb25hdGhhbiIsInRlYW1JZCI6IjE0ZGYzZCIsInRlYW1OYW1lIjoiSkZNQiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzQyMjk5OTY4fQ.poe2Bs6vR7QxSet8KaPk522RcJyt4CWcfFYsClDZntU'
-    
-    // Matteo
-    // token: ''
+if (envLoaded.error) {
+    console.error("❌ Error loading .env:", envLoaded.error);
+} else {
+    console.log("✅ .env loaded successfully");
 }
 
-export default config;
+const CONFIG = {
+    host: process.env.HOST,
+    token: process.env.TOKEN 
+}
+
+console.log("Config loaded:", CONFIG); 
+export default CONFIG;
