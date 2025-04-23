@@ -20,11 +20,15 @@ export async function blindMove(client, me, target) {
       });
     });
   
-    if (me.x < target.x)      await client.emitMove('right');
-    else if (me.x > target.x) await client.emitMove('left');
+    if (me.x < target.x)      
+      await client.emitMove('right');
+    else if (me.x > target.x) 
+      await client.emitMove('left');
   
-    if (me.y < target.y)      await client.emitMove('up');
-    else if (me.y > target.y) await client.emitMove('down');
+    if (me.y < target.y)      
+      await client.emitMove('up');
+    else if (me.y > target.y) 
+      await client.emitMove('down');
   
     await moved;
   }
