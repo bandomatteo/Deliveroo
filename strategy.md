@@ -24,11 +24,11 @@ if see another agent
         if 1 tile away from parcel OR going towards the parcel
             drop parcel and choose another one
 ```
-Another agent that is 1 tile away from a parcel if assumed to pick up that parcel (*or should the stategy change?*)
+Another agent that is 1 tile away from a parcel if assumed to pick up that parcel (*if the other agent doesn't want the parcel, neither do we*)
 
 ## When to go home?
 From position $p$ the points scored when dropping the parcels in a home $h$ is the following: <br>
-$score = distance(p, h) * n_{pc}$ <br>
+$score = currScore - distance(p, h) * n_{pc}$ <br>
 with $n_{pc}$ being the number of parcels currently carried by the player.
 
 ### Explanation
@@ -37,10 +37,23 @@ Parcels lose 1 point each second and you should multiply that for the number of 
 ### Go home
 Player should go home if the score from going home is <u>higher</u> than the score the player would obtain from picking up the best parcel and <u>then</u> go home. <br>
 *What if there are multiple high value parcels close together?*
+*We don't consider this*
 
 ## No parcels sensed
-*Possible strategies*:
+Both of these combined:
 - Explore new area of map
 - Return close to a home
-- Walk randomly
 
+That is, go close to a home, possibly to one that isn't explored yet 
+
+## Beliefs
+*Possible belief storing method follows.*
+One object / map *Data* with the following attributes:
+- The whole map (from onTile and onMap)
+- List of Bases (coordinates)
+- Parcels (store in memory to avoid unnecessary calculations)
+- Agents
+
+### Revision
+Need to update parcels' score every second / every time i need to check them.
+*Handle Agents*
