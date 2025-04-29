@@ -1,3 +1,5 @@
+import { Parcel } from "./parcel.js";
+
 /**
  * Manages the current known parcels.
  */
@@ -10,12 +12,20 @@ export class ParcelsStore {
      * Update the store from sensing event.
      * @param {Array<{id:string,carriedBy?:string,x:number,y:number,reward:number}>} parcelsArray
      */
-    updateAll(parcelsArray) {
+    updateAll(parcelsArray, mapStore) {
       this.map.clear();
       parcelsArray.forEach(p => {
         // use p.id or `${p.x}_${p.y}` as key
-        this.map.set(p.id ?? `${p.x}_${p.y}`, p);
+        let parcel = new Parcel(p, mapStore);
+        this.map.set(parcel.id, parcel);
       });
+    }
+
+    addParcel(p, mapStore) {
+      let parcel = new Parcel(p, mapStore);
+      this.map.set(parcel.id, parcel);
+
+      console.log(parcel);
     }
   
     /**

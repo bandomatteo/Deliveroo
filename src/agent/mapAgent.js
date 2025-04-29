@@ -1,5 +1,6 @@
 import DeliverooClient from "../api/deliverooClient.js"
 import { MapStore } from "../models/mapStore.js";
+import { ParcelsStore } from "../models/parcelsStore.js";
 
 
 const client = new DeliverooClient();
@@ -20,6 +21,7 @@ client.onYou( ( {id, name, x, y, score} ) => {
 
 
 let mapStore = new MapStore();
+let parcelStore = new ParcelsStore();
 
 client.onTile( ( {x, y, type} )  => {
     let numType = parseInt(type);
@@ -27,7 +29,7 @@ client.onTile( ( {x, y, type} )  => {
 });
 
 client.onMap( async ( map ) => {
-    mapStore.size = map;
+    mapStore.mapSize = map;
     let dawn = new Date().getTime();
     mapStore.calculateDistances();
     let dusk = new Date().getTime();
@@ -38,3 +40,9 @@ client.onMap( async ( map ) => {
     console.log("0, 0 -> 2, 2= ", mapStore.distance({x : 0, y : 0}, {x : 2, y : 2}))
     console.log("Time elapsed = ", (dusk - dawn) / 1000, " seconds")
 })
+
+client.onParcels( async ( pp ) => {
+    for ( let p of pp ) {
+        parcelStore.addParcel(p, mapStore);
+    }
+} )
