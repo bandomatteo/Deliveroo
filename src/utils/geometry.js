@@ -10,8 +10,3 @@ export function distance(a, b) {
   const dy = Math.abs(Math.round(a.y) - Math.round(b.y));
   return dx + dy;
 }
-
-export function areAdjacent(a, b) {
-  return distance(a, b) === 1;
-}
-  

@@ -33,8 +33,8 @@ client.onMap( async ( map ) => {
     let dusk = new Date().getTime();
     
     // Test logs
-    console.log("Done")
-    console.log("Time elapsed = ", (dusk - dawn) / 1000, " seconds")
+    // console.log("Done")
     // mapStore.printAllDistances();
-    // console.log("0, 0 -> 2, 2= ", mapStore.distance({x : 0, y : 0}, {x : 2, y : 2}))
+    console.log("0, 0 -> 2, 2= ", mapStore.distance({x : 0, y : 0}, {x : 2, y : 2}))
+    console.log("Time elapsed = ", (dusk - dawn) / 1000, " seconds")
 })
