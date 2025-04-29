@@ -28,9 +28,13 @@ client.onTile( ( {x, y, type} )  => {
 
 client.onMap( async ( map ) => {
     mapStore.size = map;
+    let dawn = new Date().getTime();
     mapStore.calculateDistances();
+    let dusk = new Date().getTime();
     
     // Test logs
-    mapStore.printAllDistances();
-    console.log("0, 0 -> 2, 2= ", mapStore.distance({x : 0, y : 0}, {x : 2, y : 2}))
+    console.log("Done")
+    console.log("Time elapsed = ", (dusk - dawn) / 1000, " seconds")
+    // mapStore.printAllDistances();
+    // console.log("0, 0 -> 2, 2= ", mapStore.distance({x : 0, y : 0}, {x : 2, y : 2}))
 })
