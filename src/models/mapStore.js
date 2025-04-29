@@ -29,12 +29,12 @@ export class MapStore {
         const key = coord2Key({x : tile.x, y : tile.y})   // Converted to string because js handles object by reference
 
         this.map.set(key, tile.type);
-        //
+        
         if (tile.type === 2) {
             this.bases.add(coord2Key({x : tile.x, y : tile.y}));
         }
 
-        console.log(tile.x, ", ", tile.y, " -> ", this.map.get(key));
+        // console.log(tile.x, ", ", tile.y, " -> ", this.map.get(key));
     }
 
     /**
