@@ -26,4 +26,12 @@ export default class DeliverooClient {
     return this.client.emitPickup();
   }
 
+  onTile(callback) {
+    this.client.onTile(callback);
+  }
+
+  onMap(callback) {
+    this.client.onMap(callback);
+  }
+
 }
