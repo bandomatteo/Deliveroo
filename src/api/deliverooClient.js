@@ -38,4 +38,8 @@ export default class DeliverooClient {
     return this.client.emitPutdown();
   }
 
+  onParcelsSensing(callback) {
+    return this.client.onParcelsSensing(callback);
+  }
+
 }
