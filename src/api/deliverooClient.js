@@ -34,4 +34,8 @@ export default class DeliverooClient {
     this.client.onMap(callback);
   }
 
+  emitPutdown() {
+    return this.client.emitPutdown();
+  }
+
 }
