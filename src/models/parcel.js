@@ -15,6 +15,11 @@ export class Parcel {
 
         this.baseDistance = Infinity;
 
+        /**
+         * @type {{x : number, y : number}}
+         */
+        this.nearestBase = null;
+
         this.calculateNearestBase(mapStore);
     }
 
@@ -23,15 +28,10 @@ export class Parcel {
      * @param { MapStore } mapStore 
      */
     calculateNearestBase(mapStore) {
-        for (const key of mapStore.bases) {
-            let coords = key2Coord(key);
+        let [base, minDist] = mapStore.nearestBase(this);
 
-            let distance = mapStore.distance(this, coords);
-
-            if (distance <= this.baseDistance) {
-                this.baseDistance = distance;
-            }
-        }
+        this.baseDistance = minDist;
+        this.nearestBase = {x : base.x, y : base.y};
     }
 }
   
