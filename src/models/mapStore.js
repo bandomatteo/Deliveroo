@@ -1,4 +1,5 @@
 import { coord2Key } from "../utils/hashMap.js";
+import { key2Coord } from "../utils/hashMap.js";
 
 /**
  * Manages the whole map (bases, distance between cells)
@@ -127,6 +128,29 @@ export class MapStore {
         }
         
         return this.distMat[fromIdx][toIdx];
+    }
+
+    /**
+     * Find nearest base from starting point
+     * @param {{x : number, y : number}} from 
+     * @return {[{x: number, y: number}, number]} A tuple: [nearest base coordinate, distance]
+     */
+    nearestBase(from) {
+        let base;
+        let minDist = Infinity;
+
+        for (const key of this.bases) {
+            let coords = key2Coord(key);
+
+            let distance = this.distance(from, coords);
+
+            if (distance <= minDist) {
+                minDist = distance;
+                base = coords;
+            }
+        }
+
+        return [base, minDist];
     }
 
     /**

@@ -58,7 +58,15 @@ while (true) {
 
     // if no parcels are available
     if ( ! nearest ) {
-        // TODO here go home absolutely
+        // Here go home absolutely
+        let [base, minDist] = mapStore.nearestBase(me);
+        await blindMove(client, me, base);
+        //
+        if (me.x === base.x && me.y === base.y) {
+            // TODO make function to putdown and remove parcels from belief
+            client.emitPutdown();
+        }
+        
         continue;
     }
     
