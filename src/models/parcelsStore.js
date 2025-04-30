@@ -15,17 +15,13 @@ export class ParcelsStore {
     updateAll(parcelsArray, mapStore) {
       this.map.clear();
       parcelsArray.forEach(p => {
-        // use p.id or `${p.x}_${p.y}` as key
-        let parcel = new Parcel(p, mapStore);
-        this.map.set(parcel.id, parcel);
+        this.addParcel(p, mapStore);
       });
     }
 
     addParcel(p, mapStore) {
       let parcel = new Parcel(p, mapStore);
       this.map.set(parcel.id, parcel);
-
-      console.log(parcel);
     }
   
     /**
