@@ -13,8 +13,8 @@ async function main() {
   const parcels = new ParcelsStore();
   const mapStore = new MapStore();
 
-  client.onYou(payload => {
-    me.update(payload);
+  client.onYou((payload, time) => {
+    me.update(payload, time);
   });
 
   // TODO: probably we can delete this one

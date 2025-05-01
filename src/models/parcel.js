@@ -1,4 +1,3 @@
-import { key2Coord } from "../utils/hashMap.js";
 import { MapStore } from "./mapStore.js";
 
 export class Parcel {
@@ -20,7 +19,9 @@ export class Parcel {
          */
         this.nearestBase = null;
 
-        this.calculateNearestBase(mapStore);
+        if (!this.carriedBy) {
+            this.calculateNearestBase(mapStore);
+        }
     }
 
     /**
