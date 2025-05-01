@@ -32,7 +32,7 @@ async function main() {
     console.log(` Loaded  ${tiles.length} tiles of the map`);
 
     mapStore.calculateDistances();
-    console.log(" Distances calculayed.\n The map is ready.");
+    console.log(" Distances calculated.\n The map is ready.");
   });
 
 
