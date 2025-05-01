@@ -92,9 +92,9 @@ async function main() {
       if (!dir) continue;
 
       const moved = new Promise(res => {
-        client.onYou(state => {
+        client.onYou((state, time) => {
           if (state.x % 1 === 0 && state.y % 1 === 0) {
-            me.update(state);
+            me.update(state, time);
             res();
           }
         });

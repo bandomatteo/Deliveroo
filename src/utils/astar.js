@@ -110,9 +110,9 @@ export function direction(from, to) {
  */
 export async function moveAndWait(client, me, dir) {
     const moved = new Promise(res => {
-        client.onYou(state => {
+        client.onYou((state, time) => {
             if (Number.isInteger(state.x) && Number.isInteger(state.y)) {
-                me.update(state);
+                me.update(state, time);
                 res();
             }
         });
