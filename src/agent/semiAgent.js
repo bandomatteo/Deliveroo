@@ -12,8 +12,8 @@ const me = new Me();
 /**
  * @param { {id : string, name : string, x : number, y : number, score : number} } payload
  */
-client.onYou( (payload) => {
-    me.update(payload);
+client.onYou( (payload, time) => {
+    me.update(payload, time);
 } )
 
 
@@ -36,47 +36,63 @@ client.onParcels( async ( pp ) => {
     }
 } )
 
+let oldTime = null;
 
 while (true) {
 
     await new Promise( res => setTimeout( res, 100 ) );
 
     if ( ! me.id || ! parcelStore.map.size ) {
-        // TODO here explore
         continue;
     }
 
+    // Get frame difference
+    if (oldTime === null) {
+        oldTime = me.ms;
+    }
+    const timeDiff = me.ms - oldTime;
+    oldTime = me.ms;
+
+    console.log(parcelStore.map.size);
+
     // TODO use function and change logic here
     // get nearest parcel
-    const nearest = Array.from( parcelStore.map.values() )
-    .filter( p => ! p.carriedBy )
-    .sort( (a, b) => {
-        const d1 = mapStore.distance( me, a );
-        const d2 = mapStore.distance( me, b );
-        return d1 - d2;
-    } ).shift();
+    const nearest = parcelStore.available
+        .sort( (a, b) => {
+            const d1 = mapStore.distance( me, a );
+            const d2 = mapStore.distance( me, b );
+            return d1 - d2;
+        } ).shift();
+
+    parcelStore.updateReward(timeDiff / 1000);
 
     // if no parcels are available
     if ( ! nearest ) {
-        // Here go home absolutely
+        // If carrying some parcels go home absolutely
+        const carriedByMe = parcelStore.carried(me.id);
+        
+        if (carriedByMe.length === 0) {
+            // TODO here explore (as before)
+            continue;
+        }
+
         let [base, minDist] = mapStore.nearestBase(me);
         await blindMove(client, me, base);
         //
         if (me.x === base.x && me.y === base.y) {
-            // TODO make function to putdown and remove parcels from belief
-            client.emitPutdown();
+            client.emitPutdown(parcelStore, me.id);
         }
         
         continue;
     }
-    
+
     // else move to nearest parcel
-    console.log( 'nearest', nearest.id, nearest.x, nearest.y );
+    // console.log( 'nearest', nearest.id, nearest.x, nearest.y );
     
     await blindMove( client, me, nearest )
-    console.log( 'moved to parcel', nearest.id, me.x, me.y );
+    // console.log( 'moved to parcel', nearest.id, me.x, me.y );
     
     await client.emitPickup();
     
-    console.log( 'picked up' );
+    // console.log( 'picked up' );
 }

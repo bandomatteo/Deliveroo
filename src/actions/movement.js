@@ -9,7 +9,7 @@ import { Me } from "../models/me.js";
  * @param {{x:number,y:number}} target 
  */
 export async function blindMove(client, me, target) {
-    console.log(`${me.name} goes from (${me.x},${me.y}) to (${target.x},${target.y})`);
+    // console.log(`${me.name} goes from (${me.x},${me.y}) to (${target.x},${target.y})`);
   
     // Promise that resolves when server reports me.x and me.y are integer again
     const moved = new Promise(res => {

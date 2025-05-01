@@ -16,8 +16,8 @@ async function main() {
   // ---------------------------------------
 
 
-  client.onYou(payload => {
-    me.update(payload);
+  client.onYou((payload, time) => {
+    me.update(payload, time);
   });
 
   client.onParcels(array => {
