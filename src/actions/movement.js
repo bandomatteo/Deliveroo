@@ -35,7 +35,23 @@ export async function smartMove(client, me, target, mapStore) {
   for (const step of path) {
     const dir = direction(me, step);
     if (!dir) continue;
-    console.log(`➡️ Moving ${dir} from (${me.x},${me.y}) to (${step.x},${step.y})`);
+    console.log(`Moving ${dir} from (${me.x},${me.y}) to (${step.x},${step.y})`);
     await moveAndWait(client, me, dir);
   }
 }
+
+/**
+ * Move to the nearest base from current position
+ * @param {DeliverooClient} client
+ * @param {Me} me
+ * @param {MapStore} mapStore
+ * @returns {Promise<void>}
+
+ */
+export async function smartMoveToNearestBase(client, me, mapStore) {
+  const [base] = mapStore.nearestBase(me);
+  if (base) {
+    await smartMove(client, me, base, mapStore);
+  }
+}
+
