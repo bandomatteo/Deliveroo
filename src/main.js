@@ -21,11 +21,10 @@ async function main() {
     mapStore.calculateDistances();
   });
 
+  //TODO: Chiedere a Jonathan se sa cosa cambia da solo il metodo onParcel
   client.onParcelsSensing(pp => {
     console.log(`Sensing ${pp.length} parcel(s)`);
-    parcels.updateAll
-      ? parcels.updateAll(pp, mapStore)
-      : pp.forEach(p => parcels.addParcel(p, mapStore));
+    parcels.updateAll? parcels.updateAll(pp, mapStore): pp.forEach(p => parcels.addParcel(p, mapStore));
   });
 
   const isInsideMap = ({ x, y }) => x >= 0 && x < mapStore.mapSize && y >= 0 && y < mapStore.mapSize;
