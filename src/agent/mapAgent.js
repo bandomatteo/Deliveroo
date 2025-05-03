@@ -42,7 +42,7 @@ client.onMap( async ( map ) => {
     console.log("Time elapsed = ", (dusk - dawn) / 1000, " seconds")
 })
 
-client.onParcels( async ( pp ) => {
+client.onParcelsSensing( async ( pp ) => {
     for ( let p of pp ) {
         parcelStore.addParcel(p, mapStore);
     }

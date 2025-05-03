@@ -35,7 +35,7 @@ export async function smartMove(client, me, target, mapStore) {
   for (const step of path) {
     const dir = direction(me, step);
     if (!dir) continue;
-    console.log(`Moving ${dir} from (${me.x},${me.y}) to (${step.x},${step.y})`);
+    // console.log(`Moving ${dir} from (${me.x},${me.y}) to (${step.x},${step.y})`);
     await moveAndWait(client, me, dir);
   }
 }
