@@ -79,7 +79,7 @@ async function main() {
       continue;
     }
 
-    const { parcel } = reachable[0];
+    const parcel = reachable[0].parcel;
     console.log(`Collecting parcel ${parcel.id} at (${parcel.x},${parcel.y})`);
 
     await smartMove(client, me, parcel, mapStore);
