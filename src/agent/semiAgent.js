@@ -2,7 +2,7 @@ import DeliverooClient from "../api/deliverooClient.js"
 import { MapStore } from "../models/mapStore.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 import { Me } from "../models/me.js";
-import { blindMove } from "../actions/movement.js";
+import { smartMove } from "../actions/movement.js";
 
 
 const client = new DeliverooClient();
@@ -30,7 +30,7 @@ client.onMap( async ( map ) => {
     mapStore.calculateDistances();
 })
 
-client.onParcels( async ( pp ) => {
+client.onParcelsSensing( async ( pp ) => {
     for ( let p of pp ) {
         parcelStore.addParcel(p, mapStore);
     }
@@ -77,7 +77,7 @@ while (true) {
         }
 
         let [base, minDist] = mapStore.nearestBase(me);
-        await blindMove(client, me, base);
+        await smartMove(client, me, base,mapStore);
         //
         if (me.x === base.x && me.y === base.y) {
             client.emitPutdown(parcelStore, me.id);
@@ -89,7 +89,7 @@ while (true) {
     // else move to nearest parcel
     // console.log( 'nearest', nearest.id, nearest.x, nearest.y );
     
-    await blindMove( client, me, nearest )
+    await smartMove( client, me, nearest,mapStore )
     // console.log( 'moved to parcel', nearest.id, me.x, me.y );
     
     await client.emitPickup();
