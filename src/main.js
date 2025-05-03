@@ -73,7 +73,7 @@ async function main() {
     const reachable = available
       .map(parcel => ({ parcel, path: getPathTo(parcel) }))
       .filter(e => e.path.length > 0)
-      .sort((a, b) => a.path.length - b.path.length);
+      .sort((a, b) => a.path.length - b.path.length); //<------ here 
 
     if (!reachable.length) {
       console.log("No reachable parcels");
