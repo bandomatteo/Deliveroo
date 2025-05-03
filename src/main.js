@@ -3,7 +3,7 @@ import { Me } from './models/me.js';
 import { ParcelsStore } from './models/parcelsStore.js';
 import { MapStore } from './models/mapStore.js';
 import { astarSearch } from './utils/astar.js';
-import { smartMove } from './actions/movement.js';
+import { smartMove, smartMoveToNearestBase } from './actions/movement.js';
 
 async function main() {
   const client = new DeliverooClient();
@@ -24,7 +24,7 @@ async function main() {
   //TODO: Chiedere a Jonathan se sa cosa cambia da solo il metodo onParcel
   client.onParcelsSensing(pp => {
     console.log(`Sensing ${pp.length} parcel(s)`);
-    parcels.updateAll? parcels.updateAll(pp, mapStore): pp.forEach(p => parcels.addParcel(p, mapStore));
+    parcels.updateAll ? parcels.updateAll(pp, mapStore) : pp.forEach(p => parcels.addParcel(p, mapStore));
   });
 
   const isInsideMap = ({ x, y }) => x >= 0 && x < mapStore.mapSize && y >= 0 && y < mapStore.mapSize;
@@ -48,23 +48,18 @@ async function main() {
     const carried = parcels.carried(me.id);
     const available = parcels.available;
 
-    
-    
+
+
     /*        --- INTENTION: Deliver if carrying anything ---
       *      REMOVE COMMENTS FROM THIS BLOCK TO ENABLE DELIVERING PARCELS 
       *      Note that this will make the agent deliver parcels to the base just when it has 1 parcel
-      * 
+      * */
     if (carried.length > 0) {
-      const [base] = mapStore.nearestBase(me);
-      if (base.x === me.x && base.y === me.y) {
-        console.log(" Delivering parcels at base");
-        client.emitPutdown(parcels, me.id);
-      } else {
-        console.log(` Carrying ${carried.length} parcels → heading to base at (${base.x}, ${base.y})`);
-        await smartMove(client, me, base, mapStore);
-      }
+      await smartMoveToNearestBase(client, me, mapStore);
+      console.log("Delivering parcels at base");
+      await client.emitPutdown(parcels, me.id);
       continue;
-    }*/
+    }
 
     // --- INTENTION1s: Collect parcel ---
     if (available.length === 0) continue;
