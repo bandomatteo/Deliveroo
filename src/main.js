@@ -69,6 +69,7 @@ async function main() {
     // --- INTENTION1s: Collect parcel ---
     if (available.length === 0) continue;
 
+    // TODO: Here we can implement a smarter strategy to choose the best parcel
     const reachable = available
       .map(parcel => ({ parcel, path: getPathTo(parcel) }))
       .filter(e => e.path.length > 0)
