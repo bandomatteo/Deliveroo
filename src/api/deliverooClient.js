@@ -49,4 +49,8 @@ export default class DeliverooClient {
     return this.client.onParcelsSensing(callback);
   }
 
+  onAgentsSensing(callback) {
+    return this.client.onAgentsSensing(callback);
+  }
+
 }
