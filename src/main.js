@@ -1,4 +1,3 @@
-
 import DeliverooClient from "./api/deliverooClient.js";
 import { Me }          from "./models/me.js";
 import { ParcelsStore }from "./models/parcelsStore.js";
@@ -21,7 +20,7 @@ async function main() {
     tiles.forEach(t =>
       mapStore.addTile({ x: t.x, y: t.y, type: t.type })
     );
-    console.log(`Map loaded (${tiles.length} tiles)`);
+    console.log(` Map loaded (${tiles.length} tiles)`);
     mapStore.calculateDistances();
   });
   client.onParcelsSensing(pp => {
