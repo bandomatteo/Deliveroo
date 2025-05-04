@@ -43,7 +43,7 @@ while (true) {
 
     await new Promise( res => setTimeout( res, 100 ) );
 
-    if ( ! me.id || ! parcelStore.map.size ) {
+    if ( ! me.id) {
         continue;
     }
 
@@ -77,7 +77,10 @@ while (true) {
         const carriedByMe = parcelStore.carried(me.id);
         
         if (carriedByMe.length === 0) {
-            // TODO here explore (as before)
+            // Explore
+            let spawnTileCoord = mapStore.randomSpawnTile;
+            console.log(spawnTileCoord);
+            await smartMove(client, me, spawnTileCoord, mapStore);
             continue;
         }
 
@@ -115,14 +118,17 @@ while (true) {
     else if (home_score > 0) {  // sometimes pickup_score is negative
         // console.log("-- GO HOME --");
         let [base, minDist] = mapStore.nearestBase(me);
-        await smartMove(client, me, base,mapStore);
+        await smartMove(client, me, base, mapStore);
         
         if (me.x === base.x && me.y === base.y) {
             client.emitPutdown(parcelStore, me.id);
         }
     }
     else {
-        // TODO explore here
+        // Explore
+        let spawnTileCoord = mapStore.randomSpawnTile;
+        console.log(spawnTileCoord);
+        await smartMove(client, me, spawnTileCoord, mapStore);
     }
     
     // console.log( 'picked up' );
