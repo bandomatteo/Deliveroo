@@ -3,6 +3,8 @@ import { MapStore } from "../models/mapStore.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 import { Me } from "../models/me.js";
 import { smartMove } from "../actions/movement.js";
+import { AgentStore } from "../models/agentStore.js";
+import { goingTowardsParcel } from "../utils/geometry.js";
 
 
 const client = new DeliverooClient();
@@ -20,6 +22,7 @@ let seconds_per_move = 0.1  // Starting value, learned on the way
 
 let mapStore = new MapStore();
 let parcelStore = new ParcelsStore();
+let agentStore = new AgentStore();
 
 client.onTile( ( {x, y, type} )  => {
     let numType = parseInt(type);
@@ -36,6 +39,13 @@ client.onParcelsSensing( async ( pp ) => {
         parcelStore.addParcel(p, mapStore);
     }
 } )
+
+
+client.onAgentsSensing( ( agents ) => {
+    for ( let a of agents ) {
+        agentStore.addAgent(a, me.ms);
+    }
+});
 
 let oldTime = null;
 
@@ -62,13 +72,51 @@ while (true) {
 
     // TODO use function and change logic here
     // get nearest parcel
-    const nearest = parcelStore.available
+    const nearestArr = parcelStore.available
         .sort( (a, b) => {
             const d1 = mapStore.distance( me, a );
             const d2 = mapStore.distance( me, b );
             return d1 - d2;
-        } ).shift();
+        } )
+    
+    let nearest = nearestArr[0];
 
+    let visibleAgents = agentStore.visible(me);
+
+    if (nearest && visibleAgents.length > 0) {
+
+        let found = false;
+        for (let parcel_index = 0; !found; parcel_index++) {
+            
+            found = true;
+
+            const myDist = mapStore.distance(me, nearest)
+            
+            for (let a of visibleAgents) {
+                const agentDist = mapStore.distance(a, nearest);
+
+                if (agentDist < myDist) {
+                    if (agentDist <= 1 || goingTowardsParcel(a, nearest)) {
+                        found = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
+                // Drop the parcel and pick the second
+                if (parcel_index + 1 < nearestArr.length) {
+                    nearest = nearestArr[parcel_index + 1];
+                }
+                else {
+                    nearest = null;
+                    found = true;
+                }
+            }
+        }
+        
+    }
+    
     parcelStore.updateReward(timeDiff / 1000);
 
     // if no parcels are available
@@ -79,7 +127,6 @@ while (true) {
         if (carriedByMe.length === 0) {
             // Explore
             let spawnTileCoord = mapStore.randomSpawnTile;
-            console.log(spawnTileCoord);
             await smartMove(client, me, spawnTileCoord, mapStore);
             continue;
         }
@@ -127,7 +174,6 @@ while (true) {
     else {
         // Explore
         let spawnTileCoord = mapStore.randomSpawnTile;
-        console.log(spawnTileCoord);
         await smartMove(client, me, spawnTileCoord, mapStore);
     }
     
