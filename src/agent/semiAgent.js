@@ -2,7 +2,7 @@ import DeliverooClient from "../api/deliverooClient.js"
 import { MapStore } from "../models/mapStore.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 import { Me } from "../models/me.js";
-import { blindMove } from "../actions/movement.js";
+import { smartMove } from "../actions/movement.js";
 
 
 const client = new DeliverooClient();
@@ -16,6 +16,7 @@ client.onYou( (payload, time) => {
     me.update(payload, time);
 } )
 
+let seconds_per_move = 0.1  // Starting value, learned on the way
 
 let mapStore = new MapStore();
 let parcelStore = new ParcelsStore();
@@ -30,7 +31,7 @@ client.onMap( async ( map ) => {
     mapStore.calculateDistances();
 })
 
-client.onParcels( async ( pp ) => {
+client.onParcelsSensing( async ( pp ) => {
     for ( let p of pp ) {
         parcelStore.addParcel(p, mapStore);
     }
@@ -53,7 +54,11 @@ while (true) {
     const timeDiff = me.ms - oldTime;
     oldTime = me.ms;
 
-    console.log(parcelStore.map.size);
+    // Update ms per move parameter (90% on history, 10% on new values)
+    // TODO don't learn for now, leave it here for later (maybe)
+    // seconds_per_move = seconds_per_move * 0.9 + timeDiff / 10_000;
+
+    // console.log("Spm: ", seconds_per_move);
 
     // TODO use function and change logic here
     // get nearest parcel
@@ -77,8 +82,8 @@ while (true) {
         }
 
         let [base, minDist] = mapStore.nearestBase(me);
-        await blindMove(client, me, base);
-        //
+        await smartMove(client, me, base,mapStore);
+        
         if (me.x === base.x && me.y === base.y) {
             client.emitPutdown(parcelStore, me.id);
         }
@@ -86,13 +91,39 @@ while (true) {
         continue;
     }
 
-    // else move to nearest parcel
-    // console.log( 'nearest', nearest.id, nearest.x, nearest.y );
-    
-    await blindMove( client, me, nearest )
-    // console.log( 'moved to parcel', nearest.id, me.x, me.y );
-    
-    await client.emitPickup();
+    let myParcels = parcelStore.carried(me.id);
+    let carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
+
+    // Calculate score of going home
+    let [base, minDist] = mapStore.nearestBase(me);
+    let home_score = carried_value - minDist * myParcels.length * seconds_per_move;
+
+    // console.log("Home = ", home_score);
+
+    // Calculate score of picking the parcel and then going home
+    let pickup_score = carried_value + nearest.reward 
+                        - (mapStore.distance(me, nearest) + nearest.baseDistance) * (myParcels.length + 1) * seconds_per_move;
+
+    // console.log("Pickup = ", pickup_score);
+
+    //  Choose accordingly
+    if (pickup_score > home_score) { 
+        // console.log("-- PICKUP --");      
+        await smartMove( client, me, nearest, mapStore )
+        await client.emitPickup();
+    }
+    else if (home_score > 0) {  // sometimes pickup_score is negative
+        // console.log("-- GO HOME --");
+        let [base, minDist] = mapStore.nearestBase(me);
+        await smartMove(client, me, base,mapStore);
+        
+        if (me.x === base.x && me.y === base.y) {
+            client.emitPutdown(parcelStore, me.id);
+        }
+    }
+    else {
+        // TODO explore here
+    }
     
     // console.log( 'picked up' );
 }
