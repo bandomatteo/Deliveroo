@@ -19,9 +19,25 @@ export class Agent {
     this.parcels  = parcels;
     this.mapStore = mapStore;
 
+    this.oldTime = null;
+    let seconds_per_move = 0.1;
+
     this.options    = [];
     this.desires    = [];
     this.intentions = [];
+  }
+
+
+  updateBeliefs() {
+    // Get frame difference
+    if (this.oldTime === null) {
+      this.oldTime = this.me.ms;
+    }
+    const timeDiff = this.me.ms - this.oldTime;
+    this.oldTime = this.me.ms;
+
+    // Update parcels
+    this.parcels.updateReward(timeDiff / 1000);
   }
 
   
@@ -122,12 +138,13 @@ export class Agent {
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
-    await smartMoveToNearestBase(
-      this.client, this.me, this.mapStore
-    );
-
+    let [base, minDist] = this.mapStore.nearestBase(this.me);
+    await smartMove(this.client, this.me, base, this.mapStore);
+        
     // drop off all carried parcels
-    await this.client.emitPutdown(this.parcels, this.me.id);
+    if (this.me.x === base.x && this.me.y === base.y) {
+        this.client.emitPutdown(this.parcels, this.me.id);
+    }
   }
 
   //TODO: Implement this one betetr because now the agent moves randomly
