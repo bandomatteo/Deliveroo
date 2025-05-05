@@ -1,5 +1,5 @@
 import { DIRECTIONS } from "../utils/directions.js";
-import { Agent } from "./agent.js";
+import { OpponentAgent } from "./opponentAgent.js";
 import { distance } from "../utils/geometry.js";
 import { Me } from "./me.js";
 
@@ -9,7 +9,7 @@ import { Me } from "./me.js";
 export class AgentStore {
     constructor() {
         /**
-         * @type { Map< string, Agent > }
+         * @type { Map< string, OpponentAgent > }
          */
         this.map = new Map();
 
@@ -20,7 +20,7 @@ export class AgentStore {
     addAgent(a, timestamp) {
         // First time -> creation
         if (!this.map.has(a.id)) {
-            let agent = new Agent(a, timestamp);
+            let agent = new OpponentAgent(a, timestamp);
             this.map.set(agent.id, agent);
         }
         // Update agent
@@ -53,7 +53,7 @@ export class AgentStore {
 
     /**
      * @param {Me} me 
-     * @returns {Array < Agent >}
+     * @returns {Array < OpponentAgent >}
      */
     visible(me) {
         return Array

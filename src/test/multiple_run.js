@@ -4,7 +4,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const file_name = 'testAgent.js'
+const file_name = 'main.js'
 const processes = 5
 
 // Function to spawn child processes
@@ -34,6 +34,6 @@ function spawnProcesses(num, agent_file_path, log) {
 // Get __dirname equivalent in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const agentPath = path.resolve(__dirname, `../agent/${file_name}`);
+const agentPath = path.resolve(__dirname, `../${file_name}`);
 
 spawnProcesses(processes, agentPath, false);

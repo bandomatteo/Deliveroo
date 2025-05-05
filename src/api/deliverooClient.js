@@ -15,10 +15,6 @@ export default class DeliverooClient {
     this.client.onYou(callback);
   }
 
-  /*onParcels(callback) {
-    this.client.onParcelsSensing(callback);
-  }*/
-
   emitMove(direction) {
     return this.client.emitMove(direction);
   }
@@ -52,5 +48,4 @@ export default class DeliverooClient {
   onAgentsSensing(callback) {
     return this.client.onAgentsSensing(callback);
   }
-
 }
