@@ -16,6 +16,11 @@ export class MapStore {
          */
         this.bases = new Set();
 
+        /**
+         * @type { Set< string >}
+         */
+        this.spawnTiles = new Set();
+
         this.mapSize = null;
 
         this.distMat = null;   // Will be the distance matrix
@@ -27,12 +32,15 @@ export class MapStore {
      * @param { {x : number, y : number, type : number} } tile
      */
     addTile (tile) {
-        const key = coord2Key({x : tile.x, y : tile.y})   // Converted to string because js handles object by reference
+        const key = coord2Key(tile)   // Converted to string because js handles object by reference
 
         this.map.set(key, tile.type);
         
-        if (tile.type === 2) {
-            this.bases.add(coord2Key({x : tile.x, y : tile.y}));
+        if (tile.type === 1) {
+            this.spawnTiles.add(key);
+        }
+        else if (tile.type === 2) {
+            this.bases.add(key);
         }
 
         // console.log(tile.x, ", ", tile.y, " -> ", this.map.get(key));
@@ -43,6 +51,14 @@ export class MapStore {
      */
     set size(size) {
         this.mapSize = size
+    }
+
+    /**
+     * @returns {{x : number, y : number}}
+     */
+    get randomSpawnTile() {
+        let tileKey = Array.from(this.spawnTiles)[Math.floor(Math.random() * this.spawnTiles.size)];
+        return key2Coord(tileKey);
     }
 
     /**
