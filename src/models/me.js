@@ -16,6 +16,7 @@ export class Me {
     this.x = null;
     this.y = null;
     this.score = null;
+    this.penalty = null;
 
     this.ms = null;
     this.frame = null;
@@ -23,7 +24,7 @@ export class Me {
 
   /**
    * Update own state from server payload.
-   * @param {{id:string,name:string,x:number,y:number,score:number}} payload
+   * @param {{id:string,name:string,x:number,y:number,score:number, penalty:number}} payload
    * @param {{ms: number, frame: number}} time
    */
   update(payload, time) {
@@ -32,6 +33,7 @@ export class Me {
     this.x     = payload.x;
     this.y     = payload.y;
     this.score = payload.score;
+    this.penalty = payload.penalty;
 
     this.ms = time.ms;
     this.frame = time.frame;

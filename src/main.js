@@ -37,6 +37,7 @@ async function main() {
     await new Promise(r => setTimeout(r, 500));
     if (!me.id) continue;           
 
+    agent.updateBeliefs();
     agent.generateDesires();
     agent.filterIntentions();
     await agent.act();

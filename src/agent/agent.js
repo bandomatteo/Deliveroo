@@ -6,6 +6,7 @@ import { ParcelsStore } from "../models/parcelsStore.js";
 import { INTENTIONS } from "../utils/intentions.js";
 import { goingTowardsParcel } from "../utils/geometry.js";
 import { astarSearch, direction } from "../utils/astar.js";
+import { coord2Key, key2Coord } from "../utils/hashMap.js";
 
 export class Agent {
   /**
@@ -23,6 +24,9 @@ export class Agent {
 
     this.pathIndex = 0;
     this.path = [];
+
+    this.penaltyCounter = 0;
+    this.oldPenalty = null;
 
     this.lastIntention = {
       type: null,
@@ -48,6 +52,17 @@ export class Agent {
 
     // Update parcels
     this.parcels.updateReward(timeDiff / 1000);
+
+    //update penalty
+    if (this.oldPenalty === null) {
+      this.oldPenalty = this.me.penalty;
+    }
+    const penaltyDiff = this.me.penalty - this.oldPenalty;
+    this.oldPenalty = this.me.penalty;
+
+    this.penaltyCounter += penaltyDiff;
+    
+    console.log("Penalty counter : ", this.penaltyCounter);
   }
 
   /**
@@ -127,13 +142,13 @@ export class Agent {
 
           this.lastIntention = intention;
           // If program is here, the parcel can be pickup by us
-          return this.achievePickup(p, isEqualToLastIntention);
+          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <=- 3);
         case INTENTIONS.GO_DEPOSIT:
           this.lastIntention = intention;
-          return this.achieveDeposit(isEqualToLastIntention);
+          return this.achieveDeposit(isEqualToLastIntention, this.penaltyCounter <=- 3);
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
-          return this.achieveExplore(isEqualToLastIntention);
+          return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <=- 3);
         default:
           this.lastIntention = intention;
           return;
@@ -141,14 +156,17 @@ export class Agent {
     }
   }
 
-  async achievePickup(p, isEqualToLastIntention) {
+  async achievePickup(p, isEqualToLastIntention, getNewPath) {
     //console.log(p.reward);
     console.log("[Agent] GO_PICKUP");
 
     // move towards the parcel and pick up
-    if (!isEqualToLastIntention) {
+    if (!isEqualToLastIntention && !getNewPath) {
       // await smartMove(this.client, this.me, p, this.mapStore);
       this.getPath(p);
+    }
+    else if (getNewPath) {
+      this.getNewPath(p);
     }
     
     this.oneStep();
@@ -162,18 +180,25 @@ export class Agent {
 
   }
 
-  async achieveDeposit(isEqualToLastIntention) {
+  async achieveDeposit(isEqualToLastIntention, getNewPath) {
     console.log("[Agent] GO_DEPOSIT");
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
-    if (!isEqualToLastIntention) {
+  if (!isEqualToLastIntention && !getNewPath) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
       this.getPath(base);
 
       this.currentNearestBase = base;
     }
+    else if (getNewPath) {
+      let [base, minDist] = this.mapStore.nearestBase(this.me);
+      this.getNewPath(this.currentNearestBase);
+
+      this.currentNearestBase = base;
+    }
+
     // await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
     this.oneStep();
     if (this.me.x === this.currentNearestBase.x && this.me.y === this.currentNearestBase.y) {
@@ -181,12 +206,16 @@ export class Agent {
     }
   }
 
-  async achieveExplore(isEqualToLastIntention) {
+  async achieveExplore(isEqualToLastIntention, getNewPath) {
     console.log("[Agent] EXPLORE");
     // Explore
-    if (!isEqualToLastIntention) {
+    if (!isEqualToLastIntention && !getNewPath) {
       let spawnTileCoord = this.mapStore.randomSpawnTile
       this.getPath(spawnTileCoord);
+    }
+    else if (getNewPath) {
+      let spawnTileCoord = this.mapStore.randomSpawnTile
+      this.getNewPath(spawnTileCoord);
     }
     this.oneStep();
   }
@@ -218,5 +247,26 @@ export class Agent {
     this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
 
     // console.log("Path size : ", this.path.length);
+  }
+
+  getNewPath(target) {
+    this.pathIndex = 0;
+    this.penaltyCounter = 0;
+    
+    let tileMapTemp = new Map();
+
+    // Remove tiles with agents
+    for (const a of this.agentStore.visible(this.me)) {
+      let type = this.mapStore.setType({x : a.x, y : a.y}, 0);
+      tileMapTemp.set(coord2Key(a), type);
+    }
+
+    this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
+    
+    // Re-add tiles
+    for (const [key, value] of tileMapTemp) {
+      let tile = key2Coord(key);
+      this.mapStore.setType(tile, value);
+    }
   }
 }

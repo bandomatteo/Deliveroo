@@ -53,6 +53,13 @@ export class MapStore {
         this.mapSize = size
     }
 
+    setType(tile, type) {
+        let key = coord2Key(tile);
+        let oldType = this.map.get(key);
+        this.map.set(key, type);
+        return oldType;
+    }
+
     /**
      * @returns {{x : number, y : number}}
      */
