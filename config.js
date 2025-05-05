@@ -1,13 +1,43 @@
-const config = {
+import { config } from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-    host: "http://localhost:8080",
-    // host: "https://deliveroojs.onrender.com",
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    // Jonathan
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc1MDBmYiIsIm5hbWUiOiJKb25hdGhhbiIsInRlYW1JZCI6IjE0ZGYzZCIsInRlYW1OYW1lIjoiSkZNQiIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzQyMjk5OTY4fQ.poe2Bs6vR7QxSet8KaPk522RcJyt4CWcfFYsClDZntU'
-    
-    // Matteo
-    // token: ''
+//TODO: Not very elegant, FIXME
+const possiblePaths = [
+  path.resolve(process.cwd(), '.env'),                  
+  path.resolve(process.cwd(), 'src/agent/.env'),        
+  path.resolve(__dirname, '.env'),                      
+  path.resolve(__dirname, '../.env'),                   
+  path.resolve(__dirname, '../../.env'),                
+];
+
+
+let envLoaded;
+let loadedPath = null;
+
+for (const envPath of possiblePaths) {
+  if (fs.existsSync(envPath)) {
+    envLoaded = config({ path: envPath });
+    loadedPath = envPath;
+    break;
+  }
 }
 
-export default config;
+if (!loadedPath) {
+  console.error("❌ Error loading .env file. Tried the following paths:");
+  possiblePaths.forEach(p => console.error(`  - ${p}`));
+} else {
+  console.log(`✅ .env loaded successfully from: ${loadedPath}`);
+}
+
+const CONFIG = {
+  host: process.env.HOST,
+  token: process.env.TOKEN 
+}
+
+console.log("Config loaded:", CONFIG); 
+export default CONFIG;
