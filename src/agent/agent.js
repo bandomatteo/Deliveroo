@@ -1,5 +1,4 @@
-// Agent.js
-import { smartMove, smartMoveToNearestBase } from "../actions/movement.js";
+import { smartMove, smartMoveToNearestBase, smartMoveToNearestBaseAndPutDown} from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -20,9 +19,9 @@ export class Agent {
     this.mapStore = mapStore;
 
     this.oldTime = null;
-    let seconds_per_move = 0.1;
+    this.seconds_per_move = 0.1;
 
-    this.options    = [];
+    // this.options    = [];
     this.desires    = [];
     this.intentions = [];
   }
@@ -41,13 +40,13 @@ export class Agent {
   }
 
   
-  generateOptions() {
-    this.options = [
-      INTENTIONS.GO_PICKUP,
-      INTENTIONS.GO_DEPOSIT,
-      INTENTIONS.EXPLORE
-    ];
-  }
+  // generateOptions() {
+  //   this.options = [
+  //     INTENTIONS.GO_PICKUP,
+  //     INTENTIONS.GO_DEPOSIT,
+  //     INTENTIONS.EXPLORE
+  //   ];
+  // }
 
   /**
    * Filter options into current desires based on state:
@@ -58,17 +57,26 @@ export class Agent {
   generateDesires() {
     this.desires = [];
 
-    if (this.parcels.available.length > 0) {
-      this.desires.push(INTENTIONS.GO_PICKUP);
+    let myParcels = this.parcels.carried(this.me.id);
+    let carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
+
+    for (const p of this.parcels.available) {
+      // Calculate score of picking the parcel and then going home
+      let pickup_score = carried_value + p.reward 
+        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * this.seconds_per_move;
+      
+      this.desires.push({type : INTENTIONS.GO_PICKUP, parcel : p , score : pickup_score});
     }
 
-    if (this.parcels.carried(this.me.id).length > 0) {
-      this.desires.push(INTENTIONS.GO_DEPOSIT);
+    if (myParcels.length > 0) {
+      // Calculate score of going home
+      let [base, minDist] = this.mapStore.nearestBase(this.me);
+      let home_score = carried_value - minDist * myParcels.length * this.seconds_per_move;
+
+      this.desires.push({type : INTENTIONS.GO_DEPOSIT, score : home_score});
     }
 
-    if (this.desires.length === 0) {
-      this.desires.push(INTENTIONS.EXPLORE);
-    }
+    this.desires.push({type : INTENTIONS.GO_EXPLORE, score : 0.0001});
   }
 
   //TODO: Follow jonathan's idea 
@@ -78,21 +86,21 @@ export class Agent {
    */
   filterIntentions() {
     // define priority order of intentions (we need to edit this one)
-    const priority = [
-      INTENTIONS.GO_DEPOSIT,
-      INTENTIONS.GO_PICKUP,
-      INTENTIONS.EXPLORE
-    ];
+    // const priority = [
+    //   INTENTIONS.GO_DEPOSIT,
+    //   INTENTIONS.GO_PICKUP,
+    //   INTENTIONS.EXPLORE
+    // ];
 
-    const desireSet = new Set(this.desires);
-    this.intentions = priority.filter(intent => desireSet.has(intent));
+    // const desireSet = new Set(this.desires);
+    this.intentions = this.desires.sort((a, b) => {return b.score - a.score});
   }
 
   async act() {
     const intention = this.intentions[0];
-    switch (intention) {
+    switch (intention.type) {
       case INTENTIONS.GO_PICKUP:
-        return this.achievePickup();
+        return this.achievePickup(intention.parcel);
       case INTENTIONS.GO_DEPOSIT:
         return this.achieveDeposit();
       case INTENTIONS.EXPLORE:
@@ -102,34 +110,35 @@ export class Agent {
     }
   }
 
-  async achievePickup() {
+  async achievePickup(p) {
+    //console.log(p.reward);
     console.log("[Agent] GO_PICKUP");
-    const mePos = { x: this.me.x, y: this.me.y };
+    // const mePos = { x: this.me.x, y: this.me.y };
 
-    const parcelsWithDistance = this.parcels.available.map(parcel => ({
-      parcel, distance: this.mapStore.distance(mePos, parcel)
-    }));
+    // const parcelsWithDistance = this.parcels.available.map(parcel => ({
+    //   parcel, distance: this.mapStore.distance(this.me, parcel)
+    // }));
 
-    // filter out parcels that are unreachable
-    const reachable = parcelsWithDistance.filter(({ distance }) =>
-      Number.isFinite(distance)
-    );
+    // // filter out parcels that are unreachable
+    // const reachable = parcelsWithDistance.filter(({ distance }) =>
+    //   Number.isFinite(distance)
+    // );
 
-    // sort parcels by distance
-    const candidates = reachable.sort((a, b) =>
-      a.distance - b.distance
-    );
+    // // sort parcels by distance
+    // const candidates = reachable.sort((a, b) =>
+    //   a.distance - b.distance
+    // );
 
-    if (candidates.length === 0) {
-      console.warn("[Agent] no reachable parcels");
-      return;
-    }
+    // if (candidates.length === 0) {
+    //   console.warn("[Agent] no reachable parcels");
+    //   return;
+    // }
 
     // go and pick the nearest parcel
-    const parcel = candidates[0].parcel;
+    // const parcel = candidates[0].parcel;
 
     // move towards the parcel and pick up
-    await smartMove(this.client, this.me, parcel, this.mapStore);
+    await smartMove(this.client, this.me, p, this.mapStore);
     await this.client.emitPickup();
   }
 
@@ -138,30 +147,14 @@ export class Agent {
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
-    let [base, minDist] = this.mapStore.nearestBase(this.me);
-    await smartMove(this.client, this.me, base, this.mapStore);
-        
-    // drop off all carried parcels
-    if (this.me.x === base.x && this.me.y === base.y) {
-        this.client.emitPutdown(this.parcels, this.me.id);
-    }
+    await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
   }
 
   //TODO: Implement this one betetr because now the agent moves randomly
   async achieveExplore() {
     console.log("[Agent] EXPLORE");
-    const dirs = [
-      { dx:  1, dy:  0 }, // right
-      { dx: -1, dy:  0 }, // left
-      { dx:  0, dy:  1 }, // down
-      { dx:  0, dy: -1 } // up
-    ];
-    const { x, y } = this.me; // to get the current position
-    // pick a random direction
-    const r = dirs[Math.floor(Math.random() * dirs.length)];
-    const target = { x: x + r.dx, y: y + r.dy };
-
-    // move towards the target cell
-    await smartMove(this.client, this.me, target, this.mapStore);
+    // Explore
+    let spawnTileCoord = this.mapStore.randomSpawnTile
+    await smartMove(this.client, this.me, spawnTileCoord, this.mapStore);
   }
 }

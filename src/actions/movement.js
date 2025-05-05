@@ -53,5 +53,18 @@ export async function smartMoveToNearestBase(client, me, mapStore) {
   if (base) {
     await smartMove(client, me, base, mapStore);
   }
+
+}
+
+export async function smartMoveToNearestBaseAndPutDown(client, me , mapStore, parcels) {
+  const [base] = mapStore.nearestBase(me);
+  if (base) {
+    await smartMove(client, me, base, mapStore);
+
+    // drop off all carried parcels
+    if (me.x === base.x && me.y === base.y) {
+      client.emitPutdown(parcels, me.id);
+    }
+  }
 }
 
