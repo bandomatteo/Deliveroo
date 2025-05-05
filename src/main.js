@@ -34,7 +34,7 @@ async function main() {
 
   // I've tried to follow this one (https://github.com/bandomatteo/Deliveroo/issues/18)
   while (true) {
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 500));
     if (!me.id) continue;           
 
     agent.generateDesires();

@@ -28,6 +28,8 @@ export class Agent {
       type: null,
     };
 
+    this.currentNearestBase = null;
+
     this.oldTime = null;
     this.seconds_per_move = 0.1;
 
@@ -169,13 +171,14 @@ export class Agent {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
       this.getPath(base);
-      
-      if (this.me.x === base.x && this.me.y === base.y) {
-          this.client.emitPutdown(this.parcels, this.me.id);
-      }
+
+      this.currentNearestBase = base;
     }
     // await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
     this.oneStep();
+    if (this.me.x === this.currentNearestBase.x && this.me.y === this.currentNearestBase.y) {
+        this.client.emitPutdown(this.parcels, this.me.id);
+    }
   }
 
   async achieveExplore(isEqualToLastIntention) {
@@ -190,18 +193,18 @@ export class Agent {
 
    async oneStep(){
 
-    if (!Number.isInteger(this.me.x) || !Number.isInteger(this.me.y)){
-      console.log("Agent is not on a tile");
-      return;
-    }
+    // if (!Number.isInteger(this.me.x) || !Number.isInteger(this.me.y)){
+    //   return;
+    // }
 
     if (this.pathIndex >= this.path.length) {
+      this.lastIntention = {type : null};
       return;
     }
     
     // console.log(" INSIDE oneStep x "+ this.me.x, "INSIDE oneStep y "+  this.me.y);
 
-    console.log("index = ", this.pathIndex);
+    // console.log("index = ", this.pathIndex);
     
     const dir = direction (this.me, this.path[this.pathIndex]);
     if (dir)
@@ -212,8 +215,8 @@ export class Agent {
 
   getPath(target){
     this.pathIndex = 0;
-    this.path = astarSearch(this.me, target, this.mapStore);
+    this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
 
-    console.log("Path size : ", this.path.length);
+    // console.log("Path size : ", this.path.length);
   }
 }
