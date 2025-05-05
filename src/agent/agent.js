@@ -1,10 +1,11 @@
-import { smartMove, smartMoveToNearestBase, smartMoveToNearestBaseAndPutDown} from "../actions/movement.js";
+import { moveAndWait, smartMove, smartMoveToNearestBase, smartMoveToNearestBaseAndPutDown} from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 import { INTENTIONS } from "../utils/intentions.js";
 import { goingTowardsParcel } from "../utils/geometry.js";
+import { astarSearch, direction } from "../utils/astar.js";
 
 export class Agent {
   /**
@@ -19,6 +20,13 @@ export class Agent {
     this.parcels  = parcels;
     this.mapStore = mapStore;
     this.agentStore = agentStore;
+
+    this.pathIndex = 0;
+    this.path = [];
+
+    this.lastIntention = {
+      type: null,
+    };
 
     this.oldTime = null;
     this.seconds_per_move = 0.1;
@@ -81,10 +89,14 @@ export class Agent {
       // Get current intention
       const intention = this.intentions[intentionIndex];
 
+      let isEqualToLastIntention = intention.type === this.lastIntention.type;
+
       switch (intention.type) {
 
         // If pickup -> check if there are other agents
         case INTENTIONS.GO_PICKUP:
+          isEqualToLastIntention = isEqualToLastIntention && intention.parcel.id === this.lastIntention.parcel.id;
+
           let p = intention.parcel;
   
           let visibleAgents = this.agentStore.visible(this.me);
@@ -109,39 +121,99 @@ export class Agent {
             }
           }
 
+          
+
+          this.lastIntention = intention;
           // If program is here, the parcel can be pickup by us
-          return this.achievePickup(p);
+          return this.achievePickup(p, isEqualToLastIntention);
         case INTENTIONS.GO_DEPOSIT:
-          return this.achieveDeposit();
+          this.lastIntention = intention;
+          return this.achieveDeposit(isEqualToLastIntention);
         case INTENTIONS.EXPLORE:
-          return this.achieveExplore();
+          this.lastIntention = intention;
+          return this.achieveExplore(isEqualToLastIntention);
         default:
+          this.lastIntention = intention;
           return;
       }
     }
   }
 
-  async achievePickup(p) {
+  async achievePickup(p, isEqualToLastIntention) {
     //console.log(p.reward);
     console.log("[Agent] GO_PICKUP");
 
     // move towards the parcel and pick up
-    await smartMove(this.client, this.me, p, this.mapStore);
-    await this.client.emitPickup();
+    if (!isEqualToLastIntention) {
+      // await smartMove(this.client, this.me, p, this.mapStore);
+      this.getPath(p);
+    }
+    
+    this.oneStep();
+    if (this.me.x === p.x && this.me.y === p.y) {
+      await this.client.emitPickup();
+    }
   }
 
-  async achieveDeposit() {
+  async achievePickup2(p){
+    console.log("Achieve pickup 2");
+
+  }
+
+  async achieveDeposit(isEqualToLastIntention) {
     console.log("[Agent] GO_DEPOSIT");
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
-    await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
+    if (!isEqualToLastIntention) {
+
+      let [base, minDist] = this.mapStore.nearestBase(this.me);
+      this.getPath(base);
+      
+      if (this.me.x === base.x && this.me.y === base.y) {
+          this.client.emitPutdown(this.parcels, this.me.id);
+      }
+    }
+    // await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
+    this.oneStep();
   }
 
-  async achieveExplore() {
+  async achieveExplore(isEqualToLastIntention) {
     console.log("[Agent] EXPLORE");
     // Explore
-    let spawnTileCoord = this.mapStore.randomSpawnTile
-    await smartMove(this.client, this.me, spawnTileCoord, this.mapStore);
+    if (!isEqualToLastIntention) {
+      let spawnTileCoord = this.mapStore.randomSpawnTile
+      this.getPath(spawnTileCoord);
+    }
+    this.oneStep();
+  }
+
+   async oneStep(){
+
+    if (!Number.isInteger(this.me.x) || !Number.isInteger(this.me.y)){
+      console.log("Agent is not on a tile");
+      return;
+    }
+
+    if (this.pathIndex >= this.path.length) {
+      return;
+    }
+    
+    // console.log(" INSIDE oneStep x "+ this.me.x, "INSIDE oneStep y "+  this.me.y);
+
+    console.log("index = ", this.pathIndex);
+    
+    const dir = direction (this.me, this.path[this.pathIndex]);
+    if (dir)
+      await moveAndWait(this.client, this.me, dir);
+
+    this.pathIndex++;
+  }
+
+  getPath(target){
+    this.pathIndex = 0;
+    this.path = astarSearch(this.me, target, this.mapStore);
+
+    console.log("Path size : ", this.path.length);
   }
 }

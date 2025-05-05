@@ -31,7 +31,7 @@ export async function moveAndWait(client, me, dir) {
  * @param {MapStore} mapStore
  */
 export async function smartMove(client, me, target, mapStore) {
-  const path = astarSearch({ x: me.x, y: me.y }, target, mapStore);
+  const path = astarSearch( me, target, mapStore);
   for (const step of path) {
     const dir = direction(me, step);
     if (!dir) continue;
@@ -67,4 +67,5 @@ export async function smartMoveToNearestBaseAndPutDown(client, me , mapStore, pa
     }
   }
 }
+
 
