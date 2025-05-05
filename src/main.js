@@ -3,13 +3,15 @@ import { Me }          from "./models/me.js";
 import { ParcelsStore }from "./models/parcelsStore.js";
 import { MapStore }    from "./models/mapStore.js";
 import { Agent }       from "./agent/agent.js";
+import { AgentStore } from "./models/agentStore.js";
 
 async function main() {
   const client   = new DeliverooClient();
   const me       = new Me();
   const parcels  = new ParcelsStore();
   const mapStore = new MapStore();
-  const agent    = new Agent(client, me, parcels, mapStore);
+  const agentStore = new AgentStore();
+  const agent    = new Agent(client, me, parcels, mapStore, agentStore);
 
   client.onYou((payload, time) => me.update(payload, time));
   client.onTile(({ x, y, type }) =>
@@ -35,7 +37,6 @@ async function main() {
     await new Promise(r => setTimeout(r, 100));
     if (!me.id) continue;           
 
-    //agent.generateOptions();
     agent.generateDesires();
     agent.filterIntentions();
     await agent.act();

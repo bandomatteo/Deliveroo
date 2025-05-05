@@ -4,6 +4,7 @@ import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 import { INTENTIONS } from "../utils/intentions.js";
+import { goingTowardsParcel } from "../utils/geometry.js";
 
 export class Agent {
   /**
@@ -12,16 +13,16 @@ export class Agent {
    * @param {ParcelsStore}     parcels
    * @param {MapStore}         mapStore
    */
-  constructor(client, me, parcels, mapStore) {
+  constructor(client, me, parcels, mapStore, agentStore) {
     this.client   = client;
     this.me       = me;
     this.parcels  = parcels;
     this.mapStore = mapStore;
+    this.agentStore = agentStore;
 
     this.oldTime = null;
     this.seconds_per_move = 0.1;
 
-    // this.options    = [];
     this.desires    = [];
     this.intentions = [];
   }
@@ -38,15 +39,6 @@ export class Agent {
     // Update parcels
     this.parcels.updateReward(timeDiff / 1000);
   }
-
-  
-  // generateOptions() {
-  //   this.options = [
-  //     INTENTIONS.GO_PICKUP,
-  //     INTENTIONS.GO_DEPOSIT,
-  //     INTENTIONS.EXPLORE
-  //   ];
-  // }
 
   /**
    * Filter options into current desires based on state:
@@ -76,66 +68,62 @@ export class Agent {
       this.desires.push({type : INTENTIONS.GO_DEPOSIT, score : home_score});
     }
 
-    this.desires.push({type : INTENTIONS.GO_EXPLORE, score : 0.0001});
+    this.desires.push({type : INTENTIONS.EXPLORE, score : 0.0001});
   }
 
-  //TODO: Follow jonathan's idea 
-  /**
-   * Select the highest-priority intention that matches a desire.
-   * Priority: GO_DEPOSIT > GO_PICKUP > EXPLORE
-   */
   filterIntentions() {
-    // define priority order of intentions (we need to edit this one)
-    // const priority = [
-    //   INTENTIONS.GO_DEPOSIT,
-    //   INTENTIONS.GO_PICKUP,
-    //   INTENTIONS.EXPLORE
-    // ];
-
-    // const desireSet = new Set(this.desires);
     this.intentions = this.desires.sort((a, b) => {return b.score - a.score});
   }
 
   async act() {
-    const intention = this.intentions[0];
-    switch (intention.type) {
-      case INTENTIONS.GO_PICKUP:
-        return this.achievePickup(intention.parcel);
-      case INTENTIONS.GO_DEPOSIT:
-        return this.achieveDeposit();
-      case INTENTIONS.EXPLORE:
-        return this.achieveExplore();
-      default:
-        return;
+    for (let intentionIndex = 0; intentionIndex < this.intentions.length; intentionIndex++) {
+      
+      // Get current intention
+      const intention = this.intentions[intentionIndex];
+
+      switch (intention.type) {
+
+        // If pickup -> check if there are other agents
+        case INTENTIONS.GO_PICKUP:
+          let p = intention.parcel;
+  
+          let visibleAgents = this.agentStore.visible(this.me);
+      
+          if (visibleAgents.length > 0) {
+      
+            let canPickup = true;
+            const myDist = this.mapStore.distance(this.me, p)
+            
+            for (let a of visibleAgents) {
+                const agentDist = this.mapStore.distance(a, p);
+
+                if (agentDist < myDist && (agentDist <= 1 || goingTowardsParcel(a, p))) {
+                  canPickup = false;
+                  break;
+                }
+            }
+  
+            if (!canPickup) {
+                // Drop the parcel and pick the next intention in order
+                continue;
+            }
+          }
+
+          // If program is here, the parcel can be pickup by us
+          return this.achievePickup(p);
+        case INTENTIONS.GO_DEPOSIT:
+          return this.achieveDeposit();
+        case INTENTIONS.EXPLORE:
+          return this.achieveExplore();
+        default:
+          return;
+      }
     }
   }
 
   async achievePickup(p) {
     //console.log(p.reward);
     console.log("[Agent] GO_PICKUP");
-    // const mePos = { x: this.me.x, y: this.me.y };
-
-    // const parcelsWithDistance = this.parcels.available.map(parcel => ({
-    //   parcel, distance: this.mapStore.distance(this.me, parcel)
-    // }));
-
-    // // filter out parcels that are unreachable
-    // const reachable = parcelsWithDistance.filter(({ distance }) =>
-    //   Number.isFinite(distance)
-    // );
-
-    // // sort parcels by distance
-    // const candidates = reachable.sort((a, b) =>
-    //   a.distance - b.distance
-    // );
-
-    // if (candidates.length === 0) {
-    //   console.warn("[Agent] no reachable parcels");
-    //   return;
-    // }
-
-    // go and pick the nearest parcel
-    // const parcel = candidates[0].parcel;
 
     // move towards the parcel and pick up
     await smartMove(this.client, this.me, p, this.mapStore);
@@ -150,7 +138,6 @@ export class Agent {
     await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
   }
 
-  //TODO: Implement this one betetr because now the agent moves randomly
   async achieveExplore() {
     console.log("[Agent] EXPLORE");
     // Explore

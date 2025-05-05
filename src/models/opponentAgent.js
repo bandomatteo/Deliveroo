@@ -1,6 +1,6 @@
 import { DIRECTIONS } from "../utils/directions.js";
 
-export class Agent {
+export class OpponentAgent {
     /**
      * @param {{id : string, name : string, teamId : string, teamName : string, x : number, y : number, score : number}} agent
      */
