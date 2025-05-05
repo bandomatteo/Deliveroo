@@ -42,8 +42,6 @@ export class MapStore {
         else if (tile.type === 2) {
             this.bases.add(key);
         }
-
-        // console.log(tile.x, ", ", tile.y, " -> ", this.map.get(key));
     }
 
     /**
@@ -54,11 +52,9 @@ export class MapStore {
     }
 
     setType(tile, type) {
-        console.log ("Setting tile ", tile.x, ", ", tile.y, " to ", type);
         let key = coord2Key(tile);
         let oldType = this.map.get(key);
         this.map.set(key, type);
-        console.log("Tile ", tile.x, ", ", tile.y, " changed from ", oldType, " to ", type);
         return oldType;
     }
 

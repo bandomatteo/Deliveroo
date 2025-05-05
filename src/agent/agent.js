@@ -66,8 +66,6 @@ export class Agent {
     else {
       this.penaltyCounter += penaltyDiff;
     }
-    
-    console.log("Penalty counter : ", this.penaltyCounter);
   }
 
   /**
@@ -162,7 +160,6 @@ export class Agent {
   }
 
   async achievePickup(p, isEqualToLastIntention, getNewPath) {
-    //console.log(p.reward);
     console.log("[Agent] GO_PICKUP");
 
     // move towards the parcel and pick up
@@ -175,14 +172,9 @@ export class Agent {
     }
     
     this.oneStep();
-    /*if (this.me.x === p.x && this.me.y === p.y) {
+    if (this.me.x === p.x && this.me.y === p.y) {
       await this.client.emitPickup();
-    }*/
-  }
-
-  async achievePickup2(p){
-    console.log("Achieve pickup 2");
-
+    }
   }
 
   async achieveDeposit(isEqualToLastIntention, getNewPath) {
@@ -226,25 +218,14 @@ export class Agent {
   }
 
    async oneStep(){
-
-    // if (!Number.isInteger(this.me.x) || !Number.isInteger(this.me.y)){
-    //   return;
-    // }
-
     if (this.pathIndex >= this.path.length) {
       this.lastIntention = {type : null};
       return;
     }
     
-    // console.log(" INSIDE oneStep x "+ this.me.x, "INSIDE oneStep y "+  this.me.y);
-
-    // console.log("index = ", this.pathIndex);
-    
     const dir = direction (this.me, this.path[this.pathIndex]);
     if (dir){
       await moveAndWait(this.client, this.me, dir);
-      this.client.emitPickup()
-
     }
       
 
@@ -254,8 +235,6 @@ export class Agent {
   getPath(target){
     this.pathIndex = 0;
     this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
-
-    // console.log("Path size : ", this.path.length);
   }
 
   getNewPath(target) {
@@ -264,14 +243,12 @@ export class Agent {
     
     let tileMapTemp = new Map();
 
-    //console.log("Prima" , this.mapStore.map);
     // Remove tiles with agents
-    console.log(this.agentStore);
     for (const a of this.agentStore.visible(this.me)) {
       let type = this.mapStore.setType({x : a.x, y : a.y}, 0);
       tileMapTemp.set(coord2Key(a), type);
     }
-    //console.log("Dopo" , this.mapStore.map);
+
     this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
     
     // Re-add tiles
