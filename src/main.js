@@ -32,6 +32,12 @@ async function main() {
       : pp.forEach(p => parcels.addParcel(p, mapStore));
   });
 
+  client.onAgentsSensing(agents => {
+    agents.forEach(a => agentStore.addAgent(a, me.ms));
+  });
+
+
+
   // I've tried to follow this one (https://github.com/bandomatteo/Deliveroo/issues/18)
   while (true) {
     await new Promise(r => setTimeout(r, 500));

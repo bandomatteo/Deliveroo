@@ -60,7 +60,12 @@ export class Agent {
     const penaltyDiff = this.me.penalty - this.oldPenalty;
     this.oldPenalty = this.me.penalty;
 
-    this.penaltyCounter += penaltyDiff;
+    if (penaltyDiff === 0) {
+      this.penaltyCounter = 0;
+    }
+    else {
+      this.penaltyCounter += penaltyDiff;
+    }
     
     console.log("Penalty counter : ", this.penaltyCounter);
   }
@@ -170,9 +175,9 @@ export class Agent {
     }
     
     this.oneStep();
-    if (this.me.x === p.x && this.me.y === p.y) {
+    /*if (this.me.x === p.x && this.me.y === p.y) {
       await this.client.emitPickup();
-    }
+    }*/
   }
 
   async achievePickup2(p){
@@ -236,8 +241,12 @@ export class Agent {
     // console.log("index = ", this.pathIndex);
     
     const dir = direction (this.me, this.path[this.pathIndex]);
-    if (dir)
+    if (dir){
       await moveAndWait(this.client, this.me, dir);
+      this.client.emitPickup()
+
+    }
+      
 
     this.pathIndex++;
   }
@@ -255,12 +264,14 @@ export class Agent {
     
     let tileMapTemp = new Map();
 
+    //console.log("Prima" , this.mapStore.map);
     // Remove tiles with agents
+    console.log(this.agentStore);
     for (const a of this.agentStore.visible(this.me)) {
       let type = this.mapStore.setType({x : a.x, y : a.y}, 0);
       tileMapTemp.set(coord2Key(a), type);
     }
-
+    //console.log("Dopo" , this.mapStore.map);
     this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
     
     // Re-add tiles
