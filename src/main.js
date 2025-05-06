@@ -27,9 +27,7 @@ async function main() {
   });
   client.onParcelsSensing(pp => {
     //console.log(`Sensing ${pp.length} parcel(s)`);
-    parcels.updateAll
-      ? parcels.updateAll(pp, mapStore)
-      : pp.forEach(p => parcels.addParcel(p, mapStore));
+    pp.forEach(p => parcels.addParcel(p, mapStore));
   });
 
   client.onAgentsSensing(agents => {
