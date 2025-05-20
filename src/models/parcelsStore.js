@@ -1,3 +1,4 @@
+import { MapStore } from "./mapStore.js";
 import { Parcel } from "./parcel.js";
 
 /**
@@ -19,11 +20,20 @@ export class ParcelsStore {
       });
     }
 
+    /**
+     * Add parcel to the ParcelStore
+     * @param {*} p 
+     * @param {MapStore} mapStore 
+     */
     addParcel(p, mapStore) {
       let parcel = new Parcel(p, mapStore);
       this.map.set(parcel.id, parcel);
     }
 
+    /**
+     * Remove parcel from the ParcelStore
+     * @param {*} p 
+     */
     removeParcel(p) {
       this.map.delete(p.id);
     }
@@ -36,6 +46,9 @@ export class ParcelsStore {
         .filter(p => !p.carriedBy);
     }
 
+    /**
+     * Return set of parcels id that are currently available
+     */
     get availableIdSet() {
       return new Set(
         Array.from(this.map.values())
@@ -53,6 +66,10 @@ export class ParcelsStore {
         .filter(p => p.carriedBy === id);
     }
 
+    /**
+     * Lowers the score of each parcel in memory
+     * @param {number} amountToSubtract 
+     */
     updateReward(amountToSubtract) {
       const availableParcels = this.availableIdSet;
       

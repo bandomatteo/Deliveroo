@@ -17,6 +17,11 @@ export class AgentStore {
     }
     
 
+    /**
+     * Add agent to AgentStore
+     * @param {*} a 
+     * @param {number} timestamp 
+     */
     addAgent(a, timestamp) {
         // First time -> creation
         if (!this.map.has(a.id)) {
@@ -29,10 +34,19 @@ export class AgentStore {
         }
     }
 
+    /**
+     * Remove agent from AgentStore
+     * @param {*} a 
+     */
     removeAgent(a) {
         this.map.delete(a.id);
     }
 
+    /**
+     * Update agent values from AgentStore
+     * @param {*} a 
+     * @param {number} timestamp 
+     */
     updateAgent(a, timestamp) {
         let agent = this.map.get(a.id);
 
@@ -43,6 +57,12 @@ export class AgentStore {
         agent.y = a.y;
     }
 
+    /**
+     * Find direction in which the agent is going
+     * @param {{x : number, y : number}} old 
+     * @param {{x : number, y : number}} curr 
+     * @returns direction of the agent
+     */
     findDirection(old, curr) {
         if ( old.x < curr.x ) return DIRECTIONS.RIGHT;
         else if ( old.x > curr.x ) return DIRECTIONS.LEFT;

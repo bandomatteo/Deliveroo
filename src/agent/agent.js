@@ -217,7 +217,10 @@ export class Agent {
     this.oneStep();
   }
 
-   async oneStep(){
+  /**
+   * Performs one step of the agent path, updating the path index
+   */
+  async oneStep(){
     if (this.pathIndex >= this.path.length) {
       this.lastIntention = {type : null};
       return;
@@ -232,11 +235,19 @@ export class Agent {
     this.pathIndex++;
   }
 
+  /**
+   * Get A* path
+   * @param {{x : number, y : number}} target 
+   */
   getPath(target){
     this.pathIndex = 0;
     this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
   }
 
+  /**
+   * Get A* path, removing visible agents
+   * @param {{x : number, y : number}} target 
+   */
   getNewPath(target) {
     this.pathIndex = 0;
     this.penaltyCounter = 0;
