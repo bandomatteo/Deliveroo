@@ -26,8 +26,7 @@ async function main() {
     mapStore.calculateDistances();
   });
   client.onParcelsSensing(pp => {
-    //console.log(`Sensing ${pp.length} parcel(s)`);
-    pp.forEach(p => parcels.addParcel(p, mapStore));
+    parcels.updateAll(me, pp, mapStore);
   });
 
   client.onAgentsSensing(agents => {
@@ -38,9 +37,9 @@ async function main() {
 
   // I've tried to follow this one (https://github.com/bandomatteo/Deliveroo/issues/18)
   while (true) {
-    await new Promise(r => setTimeout(r, 100));
-    if (!me.id) continue;           
-
+    await new Promise(r => setTimeout(r, agent.ms_per_move));
+    if (!me.id || agent.isMoving) continue;           
+    
     agent.updateBeliefs();
     agent.generateDesires();
     agent.filterIntentions();

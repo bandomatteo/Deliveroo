@@ -35,9 +35,9 @@ export default class DeliverooClient {
    * @param {ParcelsStore} parcelStore
    * @param {string} id
    */
-  emitPutdown(parcelStore, id) {
+  async emitPutdown(parcelStore, id) {
     const carriedByMe = parcelStore.carried(id);
-    this.client.emitPutdown();
+    await this.client.emitPutdown();
     carriedByMe.forEach(p => parcelStore.removeParcel(p));
   }
 
