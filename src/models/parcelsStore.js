@@ -1,4 +1,6 @@
+import { distance } from "../utils/geometry.js";
 import { MapStore } from "./mapStore.js";
+import { Me } from "./me.js";
 import { Parcel } from "./parcel.js";
 
 /**
@@ -7,16 +9,27 @@ import { Parcel } from "./parcel.js";
 export class ParcelsStore {
     constructor() {
       this.map = new Map();
+
+      this.parcelObsDistance = 5;  // TODO get this from settings if possible
     }
   
     /**
      * Update the store from sensing event.
+     * @param {Me} me
      * @param {Array<{id:string,carriedBy?:string,x:number,y:number,reward:number}>} parcelsArray
      */
-    updateAll(parcelsArray, mapStore) {
-      this.map.clear();
+    updateAll(me, parcelsArray, mapStore) {
+      let visibleParcelIds = this.visible(me);
+      let sensedParcelIds = new Set(parcelsArray.map(p => p.id));
+
+      visibleParcelIds.forEach(id => {
+        if (!sensedParcelIds.has(id)) {
+            this.removeParcel(id); // Assuming removeParcel takes an object with id
+        }
+    });
+      
       parcelsArray.forEach(p => {
-        this.addParcel(p, mapStore);
+        this.addParcel(p, mapStore, me.frame);
       });
     }
 
@@ -25,8 +38,8 @@ export class ParcelsStore {
      * @param {*} p 
      * @param {MapStore} mapStore 
      */
-    addParcel(p, mapStore) {
-      let parcel = new Parcel(p, mapStore);
+    addParcel(p, mapStore, frame) {
+      let parcel = new Parcel(p, mapStore, frame);
       this.map.set(parcel.id, parcel);
     }
 
@@ -70,7 +83,7 @@ export class ParcelsStore {
      * Lowers the score of each parcel in memory
      * @param {number} amountToSubtract 
      */
-    updateReward(amountToSubtract) {
+    updateReward(currentFrame, amountToSubtract) {
       const availableParcels = this.availableIdSet;
       
       for (const [key, parcel] of this.map) {
@@ -85,6 +98,17 @@ export class ParcelsStore {
           this.removeParcel(parcel);
         }
       }
+    }
+
+    /**
+     * @param {Me} me 
+     * @returns {Set <>}
+     */
+    visible(me) {
+        return new Set(Array
+          .from(this.map.values())
+          .filter(p => distance(p, me) < this.parcelObsDistance)
+          .map(p => p.id));
     }
   }
   

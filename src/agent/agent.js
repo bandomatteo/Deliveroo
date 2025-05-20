@@ -1,4 +1,4 @@
-import { moveAndWait, smartMove, smartMoveToNearestBase, smartMoveToNearestBaseAndPutDown} from "../actions/movement.js";
+import { moveAndWait} from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -7,6 +7,8 @@ import { INTENTIONS } from "../utils/intentions.js";
 import { goingTowardsParcel } from "../utils/geometry.js";
 import { astarSearch, direction } from "../utils/astar.js";
 import { coord2Key, key2Coord } from "../utils/hashMap.js";
+import { LOG_LEVELS } from "../utils/log.js";
+import { log } from "../utils/log.js";
 
 export class Agent {
   /**
@@ -22,23 +24,35 @@ export class Agent {
     this.mapStore = mapStore;
     this.agentStore = agentStore;
 
-    this.pathIndex = 0;
-    this.path = [];
+    this.pathIndex = 0; // Move to perform (from path)
+    this.path = [];     // Path got from A*
 
     this.penaltyCounter = 0;
     this.oldPenalty = null;
 
-    this.lastIntention = {
+    this.lastIntention = {  // Out last intentions
       type: null,
     };
 
-    this.currentNearestBase = null;
+    this.currentNearestBase = null; // Nearest base from our position
 
-    this.oldTime = null;
-    this.seconds_per_move = 0.1;
+    this.oldTime = null;    // Keep track of last loop time
+    this.ms_per_move = 10; // Timeout for each move
 
-    this.desires    = [];
-    this.intentions = [];
+    this.desires    = []; // Desires
+    this.intentions = []; // Intensions
+
+    this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
+
+    // Log section
+    this.logLevels = [];
+    // this.logLevels.push(LOG_LEVELS.AGENT);
+    this.logLevels.push(LOG_LEVELS.ACTION);
+  }
+
+
+  log(logLevel, ...args) {
+    log(this.logLevels, logLevel, ...args);
   }
 
 
@@ -51,7 +65,7 @@ export class Agent {
     this.oldTime = this.me.ms;
 
     // Update parcels
-    this.parcels.updateReward(timeDiff / 1000);
+    this.parcels.updateReward(this.me.frame, timeDiff / 1000);
 
     //update penalty
     if (this.oldPenalty === null) {
@@ -83,7 +97,7 @@ export class Agent {
     for (const p of this.parcels.available) {
       // Calculate score of picking the parcel and then going home
       let pickup_score = carried_value + p.reward 
-        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * this.seconds_per_move;
+        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * (this.ms_per_move / 1000);
       
       this.desires.push({type : INTENTIONS.GO_PICKUP, parcel : p , score : pickup_score});
     }
@@ -91,7 +105,7 @@ export class Agent {
     if (myParcels.length > 0) {
       // Calculate score of going home
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let home_score = carried_value - minDist * myParcels.length * this.seconds_per_move;
+      let home_score = carried_value - minDist * myParcels.length * (this.ms_per_move / 1000);
 
       this.desires.push({type : INTENTIONS.GO_DEPOSIT, score : home_score});
     }
@@ -160,7 +174,7 @@ export class Agent {
   }
 
   async achievePickup(p, isEqualToLastIntention, getNewPath) {
-    console.log("[Agent] GO_PICKUP");
+    this.log(LOG_LEVELS.AGENT, "GO_PICKUP");
 
     // move towards the parcel and pick up
     if (!isEqualToLastIntention && !getNewPath) {
@@ -178,7 +192,7 @@ export class Agent {
   }
 
   async achieveDeposit(isEqualToLastIntention, getNewPath) {
-    console.log("[Agent] GO_DEPOSIT");
+    this.log(LOG_LEVELS.AGENT, "GO_DEPOSIT");
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
@@ -196,15 +210,17 @@ export class Agent {
       this.currentNearestBase = base;
     }
 
-    // await smartMoveToNearestBaseAndPutDown(this.client, this.me, this.mapStore, this.parcels);
     this.oneStep();
     if (this.me.x === this.currentNearestBase.x && this.me.y === this.currentNearestBase.y) {
-        this.client.emitPutdown(this.parcels, this.me.id);
+        this.isMoving = true;
+        this.log(LOG_LEVELS.ACTION, "PUTDOWN");
+        await this.client.emitPutdown(this.parcels, this.me.id);
+        this.isMoving = false;
     }
   }
 
   async achieveExplore(isEqualToLastIntention, getNewPath) {
-    console.log("[Agent] EXPLORE");
+    this.log(LOG_LEVELS.AGENT, "EXPLORE");
     // Explore
     if (!isEqualToLastIntention && !getNewPath) {
       let spawnTileCoord = this.mapStore.randomSpawnTile
@@ -226,11 +242,15 @@ export class Agent {
       return;
     }
     
+    this.isMoving = true;
+
     const dir = direction (this.me, this.path[this.pathIndex]);
     if (dir){
+      this.log(LOG_LEVELS.ACTION, "Moving ", dir);
       await moveAndWait(this.client, this.me, dir);
     }
-      
+
+    this.isMoving = false;
 
     this.pathIndex++;
   }

@@ -68,4 +68,3 @@ export async function smartMoveToNearestBaseAndPutDown(client, me , mapStore, pa
   }
 }
 
-
