@@ -34,8 +34,6 @@ async function main() {
   });
 
 
-
-  // I've tried to follow this one (https://github.com/bandomatteo/Deliveroo/issues/18)
   while (true) {
     await new Promise(r => setTimeout(r, agent.ms_per_move));
     if (!me.id || agent.isMoving) continue;           

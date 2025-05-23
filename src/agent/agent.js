@@ -9,13 +9,15 @@ import { astarSearch, direction } from "../utils/astar.js";
 import { coord2Key, key2Coord } from "../utils/hashMap.js";
 import { LOG_LEVELS } from "../utils/log.js";
 import { log } from "../utils/log.js";
+import { AgentStore } from "../models/agentStore.js";
 
 export class Agent {
   /**
    * @param {DeliverooClient} client
-   * @param {Me}               me
-   * @param {ParcelsStore}     parcels
-   * @param {MapStore}         mapStore
+   * @param {Me}              me
+   * @param {ParcelsStore}    parcels
+   * @param {MapStore}        mapStore
+   * @param {AgentStore}      agentStore
    */
   constructor(client, me, parcels, mapStore, agentStore) {
     this.client   = client;
@@ -65,7 +67,7 @@ export class Agent {
     this.oldTime = this.me.ms;
 
     // Update parcels
-    this.parcels.updateReward(this.me.frame, timeDiff / 1000);
+    this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size);
 
     //update penalty
     if (this.oldPenalty === null) {

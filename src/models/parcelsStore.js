@@ -8,6 +8,9 @@ import { Parcel } from "./parcel.js";
  */
 export class ParcelsStore {
     constructor() {
+      /** 
+       * @type {Map <string, Parcel>}
+       */
       this.map = new Map();
 
       this.parcelObsDistance = 5;  // TODO get this from settings if possible
@@ -56,7 +59,8 @@ export class ParcelsStore {
      */
     get available() {
       return Array.from(this.map.values())
-        .filter(p => !p.carriedBy);
+        .filter(p => !p.carriedBy)
+        .filter(p => p.existingProb >= 0.5);
     }
 
     /**
@@ -83,7 +87,7 @@ export class ParcelsStore {
      * Lowers the score of each parcel in memory
      * @param {number} amountToSubtract 
      */
-    updateReward(currentFrame, amountToSubtract) {
+    updateData(amountToSubtract, frame, agentCount) {
       const availableParcels = this.availableIdSet;
       
       for (const [key, parcel] of this.map) {
@@ -93,6 +97,7 @@ export class ParcelsStore {
         }
 
         parcel.reward -= amountToSubtract;
+        parcel.calculateSurvivalProbability(frame, agentCount);
 
         if (parcel.reward <= 0) {
           this.removeParcel(parcel);
