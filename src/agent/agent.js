@@ -107,12 +107,11 @@ export class Agent {
       // Il parcel calcola il reward potenziale considerando lo stato attuale dell'agente
       p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
 
-      // JUST FOR DEBUGGING
-      function randomIntFromInterval(min, max) { // min and max included 
+      // JUST FOR TESTING
+      function randomIntFromInterval(min, max) {  
         return Math.floor(Math.random() * (max - min + 1) + min);
       }
-
-      const rndInt = randomIntFromInterval(1, 6);
+      // Simulate a slave agent picking up the parcel
       p.calculatePotentialPickUpRewardSlave({ x: 1, y: 8 }, randomIntFromInterval(1, 3), 1, this.mapStore, clockPenalty)
 
 
