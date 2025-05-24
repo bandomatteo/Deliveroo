@@ -1,4 +1,4 @@
-import { moveAndWait} from "../actions/movement.js";
+import { moveAndWait } from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -23,29 +23,32 @@ export class Agent {
    * @param {ServerConfig}    serverConfig
    */
   constructor(client, me, parcels, mapStore, agentStore, serverConfig) {
-    this.client   = client;
-    this.me       = me;
-    this.parcels  = parcels;
+    this.client = client;
+    this.me = me;
+    this.parcels = parcels;
     this.mapStore = mapStore;
     this.agentStore = agentStore;
     this.serverConfig = serverConfig;
 
-    this.pathIndex = 0; // Move to perform (from path)
-    this.path = [];     // Path got from A*
-
-    this.penaltyCounter = 0;
-    this.oldPenalty = null;
-
+    // BDI structures
+    this.desires = [];
+    this.intentions = [];
     this.lastIntention = {  // Out last intentions
       type: null,
     };
 
-    this.currentNearestBase = null; // Nearest base from our position
+    // Pathfinding 
+    this.pathIndex = 0; // Move to perform (from path)
+    this.path = [];     // Path got from A*
+    
 
+    // Penalty tracking
+    this.penaltyCounter = 0;
+    this.oldPenalty = null;
+
+
+    
     this.oldTime = null;    // Keep track of last loop time
-
-    this.desires    = []; // Desires
-    this.intentions = []; // Intensions
 
     this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
 
@@ -88,43 +91,45 @@ export class Agent {
   }
 
   /**
-   * Filter options into current desires based on state:
-   * - GO_DEPOSIT if carrying any parcels
-   * - GO_PICKUP if there are parcels available
-   * - EXPLORE otherwise
-   */
+    * Filter options into current desires based on state:
+    * Generate all possible desires (pickup and deposit) and let the agent choose the best one
+    */
   generateDesires() {
     this.desires = [];
 
     let myParcels = this.parcels.carried(this.me.id);
     let carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
+    let carried_count = myParcels.length;
+    const clockPenalty = this.serverConfig.clock / 1000;
 
+    // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
-      // Calculate score of picking the parcel and then going home
-      let pickup_score = carried_value + p.reward 
-        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * (this.serverConfig.clock / 1000);
-      
-      this.desires.push({type : INTENTIONS.GO_PICKUP, parcel : p , score : pickup_score});
+      // Il parcel calcola il reward potenziale considerando lo stato attuale dell'agente
+      p.calculatePotentialPickUpReward(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
+      let pickup_score = p.potentialPickupReward;
+
+      this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickup_score });
     }
 
-    if (myParcels.length > 0) {
-      // Calculate score of going home
+    //If we have parcels, consider deposit option
+    if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let home_score = carried_value - minDist * myParcels.length * (this.serverConfig.clock / 1000);
+      let deposit_score = carried_value - minDist * carried_count * clockPenalty;
 
-      this.desires.push({type : INTENTIONS.GO_DEPOSIT, score : home_score});
+      this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
     }
 
-    this.desires.push({type : INTENTIONS.EXPLORE, score : 0.0001});
+    // Explore come fallback
+    this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
 
   filterIntentions() {
-    this.intentions = this.desires.sort((a, b) => {return b.score - a.score});
+    this.intentions = this.desires.sort((a, b) => { return b.score - a.score });
   }
 
   async act() {
     for (let intentionIndex = 0; intentionIndex < this.intentions.length; intentionIndex++) {
-      
+
       // Get current intention
       const intention = this.intentions[intentionIndex];
 
@@ -137,40 +142,40 @@ export class Agent {
           isEqualToLastIntention = isEqualToLastIntention && intention.parcel.id === this.lastIntention.parcel.id;
 
           let p = intention.parcel;
-  
+
           let visibleAgents = this.agentStore.visible(this.me, this.serverConfig);
-      
+
           if (visibleAgents.length > 0) {
-      
+
             let canPickup = true;
             const myDist = this.mapStore.distance(this.me, p)
-            
-            for (let a of visibleAgents) {
-                const agentDist = this.mapStore.distance(a, p);
 
-                if (agentDist < myDist && (agentDist <= 1 || goingTowardsParcel(a, p))) {
-                  canPickup = false;
-                  break;
-                }
+            for (let a of visibleAgents) {
+              const agentDist = this.mapStore.distance(a, p);
+
+              if (agentDist < myDist && (agentDist <= 1 || goingTowardsParcel(a, p))) {
+                canPickup = false;
+                break;
+              }
             }
-  
+
             if (!canPickup) {
-                // Drop the parcel and pick the next intention in order
-                continue;
+              // Drop the parcel and pick the next intention in order
+              continue;
             }
           }
 
-          
+
 
           this.lastIntention = intention;
           // If program is here, the parcel can be pickup by us
-          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <=- 3);
+          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <= - 3);
         case INTENTIONS.GO_DEPOSIT:
           this.lastIntention = intention;
-          return this.achieveDeposit(isEqualToLastIntention, this.penaltyCounter <=- 3);
+          return this.achieveDeposit(isEqualToLastIntention, this.penaltyCounter <= - 3);
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
-          return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <=- 3);
+          return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <= - 3);
         default:
           this.lastIntention = intention;
           return;
@@ -189,7 +194,7 @@ export class Agent {
     else if (getNewPath) {
       this.getNewPath(p);
     }
-    
+
     this.oneStep();
     if (this.me.x === p.x && this.me.y === p.y) {
       await this.client.emitPickup();
@@ -201,7 +206,7 @@ export class Agent {
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
-  if (!isEqualToLastIntention && !getNewPath) {
+    if (!isEqualToLastIntention && !getNewPath) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
       this.getPath(base);
@@ -217,10 +222,10 @@ export class Agent {
 
     this.oneStep();
     if (this.me.x === this.currentNearestBase.x && this.me.y === this.currentNearestBase.y) {
-        this.isMoving = true;
-        this.log(LOG_LEVELS.ACTION, "PUTDOWN");
-        await this.client.emitPutdown(this.parcels, this.me.id);
-        this.isMoving = false;
+      this.isMoving = true;
+      this.log(LOG_LEVELS.ACTION, "PUTDOWN");
+      await this.client.emitPutdown(this.parcels, this.me.id);
+      this.isMoving = false;
     }
   }
 
@@ -228,8 +233,8 @@ export class Agent {
     this.log(LOG_LEVELS.AGENT, "EXPLORE");
 
     // If spawn is not sparse OR we are not on a green tile
-    if (!this.mapStore.isSpawnSparse 
-        || this.mapStore.map.get(coord2Key(this.me)) !== TILE_TYPES.SPAWN) {
+    if (!this.mapStore.isSpawnSparse
+      || this.mapStore.map.get(coord2Key(this.me)) !== TILE_TYPES.SPAWN) {
 
       let spawnTileCoord = this.mapStore.randomSpawnTile;
 
@@ -247,16 +252,16 @@ export class Agent {
   /**
    * Performs one step of the agent path, updating the path index
    */
-  async oneStep(){
+  async oneStep() {
     if (this.pathIndex >= this.path.length) {
-      this.lastIntention = {type : null};
+      this.lastIntention = { type: null };
       return;
     }
-    
+
     this.isMoving = true;
 
-    const dir = direction (this.me, this.path[this.pathIndex]);
-    if (dir){
+    const dir = direction(this.me, this.path[this.pathIndex]);
+    if (dir) {
       this.log(LOG_LEVELS.ACTION, "Moving ", dir);
       await moveAndWait(this.client, this.me, dir);
     }
@@ -270,9 +275,9 @@ export class Agent {
    * Get A* path
    * @param {{x : number, y : number}} target 
    */
-  getPath(target){
+  getPath(target) {
     this.pathIndex = 0;
-    this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
+    this.path = astarSearch({ x: Math.round(this.me.x), y: Math.round(this.me.y) }, target, this.mapStore);
   }
 
   /**
@@ -282,17 +287,17 @@ export class Agent {
   getNewPath(target) {
     this.pathIndex = 0;
     this.penaltyCounter = 0;
-    
+
     let tileMapTemp = new Map();
 
     // Remove tiles with agents
     for (const a of this.agentStore.visible(this.me, this.serverConfig)) {
-      let type = this.mapStore.setType({x : a.x, y : a.y}, 0);
+      let type = this.mapStore.setType({ x: a.x, y: a.y }, 0);
       tileMapTemp.set(coord2Key(a), type);
     }
 
-    this.path = astarSearch({x : Math.round(this.me.x), y : Math.round(this.me.y)}, target, this.mapStore);
-    
+    this.path = astarSearch({ x: Math.round(this.me.x), y: Math.round(this.me.y) }, target, this.mapStore);
+
     // Re-add tiles
     for (const [key, value] of tileMapTemp) {
       let tile = key2Coord(key);
