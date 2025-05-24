@@ -24,6 +24,7 @@ async function main() {
     );
     console.log(` Map loaded (${tiles.length} tiles)`);
     mapStore.calculateDistances();
+    mapStore.calculateSparseness();
   });
   client.onParcelsSensing(pp => {
     parcels.updateAll(me, pp, mapStore);

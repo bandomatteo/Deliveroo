@@ -10,6 +10,7 @@ import { coord2Key, key2Coord } from "../utils/hashMap.js";
 import { LOG_LEVELS } from "../utils/log.js";
 import { log } from "../utils/log.js";
 import { AgentStore } from "../models/agentStore.js";
+import { TILE_TYPES } from "../utils/tile.js";
 
 export class Agent {
   /**
@@ -48,8 +49,8 @@ export class Agent {
 
     // Log section
     this.logLevels = [];
-    // this.logLevels.push(LOG_LEVELS.AGENT);
-    this.logLevels.push(LOG_LEVELS.ACTION);
+    this.logLevels.push(LOG_LEVELS.AGENT);
+    // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
 
@@ -223,16 +224,25 @@ export class Agent {
 
   async achieveExplore(isEqualToLastIntention, getNewPath) {
     this.log(LOG_LEVELS.AGENT, "EXPLORE");
-    // Explore
-    if (!isEqualToLastIntention && !getNewPath) {
-      let spawnTileCoord = this.mapStore.randomSpawnTile
-      this.getPath(spawnTileCoord);
+
+    // If spawn is not sparse OR we are not on a green tile
+    if (!this.mapStore.isSpawnSparse 
+        || this.mapStore.map.get(coord2Key(this.me)) !== TILE_TYPES.SPAWN) {
+
+      this.stopCamping = false;
+      this.campStartFrame = null;
+
+      let spawnTileCoord = this.mapStore.randomSpawnTile;
+
+      if (getNewPath) {
+        this.getNewPath(spawnTileCoord);
+      }
+      else if (!isEqualToLastIntention) {
+        this.getPath(spawnTileCoord);
+      }
+
+      this.oneStep();
     }
-    else if (getNewPath) {
-      let spawnTileCoord = this.mapStore.randomSpawnTile
-      this.getNewPath(spawnTileCoord);
-    }
-    this.oneStep();
   }
 
   /**

@@ -1,5 +1,6 @@
 import { coord2Key } from "../utils/hashMap.js";
 import { key2Coord } from "../utils/hashMap.js";
+import { TILE_TYPES } from "../utils/tile.js";
 
 /**
  * Manages the whole map (bases, distance between cells)
@@ -25,6 +26,8 @@ export class MapStore {
 
         this.distMat = null;   // Will be the distance matrix
         this.indexOf = null;
+
+        this.isSpawnSparse = false; // Check is spawn tiles are sparse
     }
   
     /**
@@ -36,10 +39,10 @@ export class MapStore {
 
         this.map.set(key, tile.type);
         
-        if (tile.type === 1) {
+        if (tile.type === TILE_TYPES.SPAWN) {
             this.spawnTiles.add(key);
         }
-        else if (tile.type === 2) {
+        else if (tile.type === TILE_TYPES.BASE) {
             this.bases.add(key);
         }
     }
@@ -81,7 +84,7 @@ export class MapStore {
             for (let y = 0; y < this.mapSize; y++) {
                 const key = coord2Key({x,y});
 
-                if (this.map.get(key) !== 0) {
+                if (this.map.get(key) !== TILE_TYPES.EMPTY) {
                     const idx = cells.length;
                     cells.push({x,y});
                     this.indexOf.set(key, idx);
@@ -172,6 +175,18 @@ export class MapStore {
         }
 
         return [base, minDist];
+    }
+
+    calculateSparseness() {
+        const num_parcels = 10; // TODO prendere dal server
+
+        const numCells = Array.from(this.map.values())
+                            .filter(type => type > TILE_TYPES.EMPTY)
+                            .length;
+        const greenCellRatio = this.spawnTiles.size / numCells;
+        const spawnRatio =  this.spawnTiles.size / num_parcels;  // Vogliamo un ratio < 3 (Es. 10 parcels su 30 spawn tiles)
+        
+        this.isSpawnSparse = greenCellRatio < 0.2 && spawnRatio < 3;
     }
 
     /**
