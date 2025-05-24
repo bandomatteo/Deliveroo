@@ -48,4 +48,8 @@ export default class DeliverooClient {
   onAgentsSensing(callback) {
     return this.client.onAgentsSensing(callback);
   }
+
+  onConfig(config) {
+    return this.client.onConfig(config);
+  }
 }

@@ -2,6 +2,7 @@ import { distance } from "../utils/geometry.js";
 import { MapStore } from "./mapStore.js";
 import { Me } from "./me.js";
 import { Parcel } from "./parcel.js";
+import { ServerConfig } from "./serverConfig.js";
 
 /**
  * Manages the current known parcels.
@@ -12,17 +13,17 @@ export class ParcelsStore {
        * @type {Map <string, Parcel>}
        */
       this.map = new Map();
-
-      this.parcelObsDistance = 5;  // TODO get this from settings if possible
     }
   
     /**
      * Update the store from sensing event.
      * @param {Me} me
      * @param {Array<{id:string,carriedBy?:string,x:number,y:number,reward:number}>} parcelsArray
+     * @param {MapStore} mapStore
+     * @param {ServerConfig} config
      */
-    updateAll(me, parcelsArray, mapStore) {
-      let visibleParcelIds = this.visible(me);
+    updateAll(me, parcelsArray, mapStore, config) {
+      let visibleParcelIds = this.visible(me, config);
       let sensedParcelIds = new Set(parcelsArray.map(p => p.id));
 
       visibleParcelIds.forEach(id => {
@@ -86,8 +87,11 @@ export class ParcelsStore {
     /**
      * Lowers the score of each parcel in memory
      * @param {number} amountToSubtract 
+     * @param {number} frame
+     * @param {number} agentCount
+     * @param {ServerConfig} config
      */
-    updateData(amountToSubtract, frame, agentCount) {
+    updateData(amountToSubtract, frame, agentCount, config) {
       const availableParcels = this.availableIdSet;
       
       for (const [key, parcel] of this.map) {
@@ -96,7 +100,7 @@ export class ParcelsStore {
           continue;
         }
 
-        parcel.reward -= amountToSubtract;
+        parcel.reward -= amountToSubtract * config.parcels_decaying_interval;
         parcel.calculateSurvivalProbability(frame, agentCount);
 
         if (parcel.reward <= 0) {
@@ -107,12 +111,13 @@ export class ParcelsStore {
 
     /**
      * @param {Me} me 
+     * @param {ServerConfig} config
      * @returns {Set <>}
      */
-    visible(me) {
+    visible(me, config) {
         return new Set(Array
           .from(this.map.values())
-          .filter(p => distance(p, me) < this.parcelObsDistance)
+          .filter(p => distance(p, me) < config.parcels_obs_distance)
           .map(p => p.id));
     }
   }

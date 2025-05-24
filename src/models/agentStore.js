@@ -2,6 +2,7 @@ import { DIRECTIONS } from "../utils/directions.js";
 import { OpponentAgent } from "./opponentAgent.js";
 import { distance } from "../utils/geometry.js";
 import { Me } from "./me.js";
+import { ServerConfig } from "./serverConfig.js";
 
 /**
  * Manages the agents
@@ -12,8 +13,6 @@ export class AgentStore {
          * @type { Map< string, OpponentAgent > }
          */
         this.map = new Map();
-
-        this.agentObsDistance = 5;  // TODO get this from settings if possible
     }
     
 
@@ -73,12 +72,13 @@ export class AgentStore {
 
     /**
      * @param {Me} me 
+     * @param {ServerConfig} config
      * @returns {Array < OpponentAgent >}
      */
-    visible(me) {
+    visible(me, config) {
         return Array
             .from(this.map.values())
-            .filter(agent => {return distance(agent, me) < this.agentObsDistance});
+            .filter(agent => {return distance(agent, me) < config.agents_obs_distance});
     }
 }
   

@@ -11,6 +11,7 @@ import { LOG_LEVELS } from "../utils/log.js";
 import { log } from "../utils/log.js";
 import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
+import { ServerConfig } from "../models/serverConfig.js";
 
 export class Agent {
   /**
@@ -19,13 +20,15 @@ export class Agent {
    * @param {ParcelsStore}    parcels
    * @param {MapStore}        mapStore
    * @param {AgentStore}      agentStore
+   * @param {ServerConfig}    serverConfig
    */
-  constructor(client, me, parcels, mapStore, agentStore) {
+  constructor(client, me, parcels, mapStore, agentStore, serverConfig) {
     this.client   = client;
     this.me       = me;
     this.parcels  = parcels;
     this.mapStore = mapStore;
     this.agentStore = agentStore;
+    this.serverConfig = serverConfig;
 
     this.pathIndex = 0; // Move to perform (from path)
     this.path = [];     // Path got from A*
@@ -40,7 +43,6 @@ export class Agent {
     this.currentNearestBase = null; // Nearest base from our position
 
     this.oldTime = null;    // Keep track of last loop time
-    this.ms_per_move = 10; // Timeout for each move
 
     this.desires    = []; // Desires
     this.intentions = []; // Intensions
@@ -68,7 +70,7 @@ export class Agent {
     this.oldTime = this.me.ms;
 
     // Update parcels
-    this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size);
+    this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size, this.serverConfig);
 
     //update penalty
     if (this.oldPenalty === null) {
@@ -100,7 +102,7 @@ export class Agent {
     for (const p of this.parcels.available) {
       // Calculate score of picking the parcel and then going home
       let pickup_score = carried_value + p.reward 
-        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * (this.ms_per_move / 1000);
+        - (this.mapStore.distance(this.me, p) + p.baseDistance) * (myParcels.length + 1) * (this.serverConfig.clock / 1000);
       
       this.desires.push({type : INTENTIONS.GO_PICKUP, parcel : p , score : pickup_score});
     }
@@ -108,7 +110,7 @@ export class Agent {
     if (myParcels.length > 0) {
       // Calculate score of going home
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let home_score = carried_value - minDist * myParcels.length * (this.ms_per_move / 1000);
+      let home_score = carried_value - minDist * myParcels.length * (this.serverConfig.clock / 1000);
 
       this.desires.push({type : INTENTIONS.GO_DEPOSIT, score : home_score});
     }
@@ -136,7 +138,7 @@ export class Agent {
 
           let p = intention.parcel;
   
-          let visibleAgents = this.agentStore.visible(this.me);
+          let visibleAgents = this.agentStore.visible(this.me, this.serverConfig);
       
           if (visibleAgents.length > 0) {
       
@@ -229,9 +231,6 @@ export class Agent {
     if (!this.mapStore.isSpawnSparse 
         || this.mapStore.map.get(coord2Key(this.me)) !== TILE_TYPES.SPAWN) {
 
-      this.stopCamping = false;
-      this.campStartFrame = null;
-
       let spawnTileCoord = this.mapStore.randomSpawnTile;
 
       if (getNewPath) {
@@ -287,7 +286,7 @@ export class Agent {
     let tileMapTemp = new Map();
 
     // Remove tiles with agents
-    for (const a of this.agentStore.visible(this.me)) {
+    for (const a of this.agentStore.visible(this.me, this.serverConfig)) {
       let type = this.mapStore.setType({x : a.x, y : a.y}, 0);
       tileMapTemp.set(coord2Key(a), type);
     }
