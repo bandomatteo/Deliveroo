@@ -43,6 +43,12 @@ async function main() {
     agents.forEach(a => agentStore.addAgent(a, me.ms));
   });
 
+  // Master agent
+  /*
+   onTile
+   onMap
+   onConfig
+  */
 
 
   while (true) {
