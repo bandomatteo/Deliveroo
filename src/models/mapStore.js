@@ -1,6 +1,7 @@
 import { coord2Key } from "../utils/hashMap.js";
 import { key2Coord } from "../utils/hashMap.js";
 import { TILE_TYPES } from "../utils/tile.js";
+import { ServerConfig } from "./serverConfig.js";
 
 /**
  * Manages the whole map (bases, distance between cells)
@@ -177,14 +178,15 @@ export class MapStore {
         return [base, minDist];
     }
 
-    calculateSparseness() {
-        const num_parcels = 10; // TODO prendere dal server
-
+    /**
+     * @param {ServerConfig} config 
+     */
+    calculateSparseness(config) {
         const numCells = Array.from(this.map.values())
                             .filter(type => type > TILE_TYPES.EMPTY)
                             .length;
         const greenCellRatio = this.spawnTiles.size / numCells;
-        const spawnRatio =  this.spawnTiles.size / num_parcels;  // Vogliamo un ratio < 3 (Es. 10 parcels su 30 spawn tiles)
+        const spawnRatio =  this.spawnTiles.size / config.parcels_max;  // Vogliamo un ratio < 3 (Es. 10 parcels su 30 spawn tiles)
         
         this.isSpawnSparse = greenCellRatio < 0.2 && spawnRatio < 3;
     }
