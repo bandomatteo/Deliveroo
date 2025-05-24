@@ -27,6 +27,7 @@ export class Parcel {
         }
 
         this.potentialPickupReward =  0; // Reward potenziale per il pickup
+        this.potentialPickUpRewardSlave = 0;
         
     }
 
@@ -65,7 +66,7 @@ export class Parcel {
      * 
      *
      */
-    calculatePotentialPickUpReward(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
+    calculatePotentialPickUpRewardMaster(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
         if (this.carriedBy) 
             return -Infinity; // Already carried, no reward
 
@@ -82,6 +83,25 @@ export class Parcel {
         const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
         
         this.potentialPickupReward = potentialReward;
+    }
+
+    calculatePotentialPickUpRewardSlave(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
+        if (this.carriedBy) 
+            return -Infinity; // Already carried, no reward
+
+        const distanceToParcel = mapStore.distance(agentPos, this);
+        
+        // Total reward = sum of all carried parcels + this parcel's reward
+        const totalReward = carriedValue + this.reward;
+
+        const totalDistance = distanceToParcel + this.baseDistance;
+        
+        const totalParcels = carriedCount + 1;
+        
+        // reward potenziale: reward totale - costo temporale del viaggio
+        const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
+        
+        this.potentialPickUpRewardSlave = potentialReward;
     }
 
     

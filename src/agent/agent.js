@@ -40,14 +40,14 @@ export class Agent {
     // Pathfinding 
     this.pathIndex = 0; // Move to perform (from path)
     this.path = [];     // Path got from A*
-    
+
 
     // Penalty tracking
     this.penaltyCounter = 0;
     this.oldPenalty = null;
 
 
-    
+
     this.oldTime = null;    // Keep track of last loop time
 
     this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
@@ -105,10 +105,31 @@ export class Agent {
     // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
       // Il parcel calcola il reward potenziale considerando lo stato attuale dell'agente
-      p.calculatePotentialPickUpReward(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
-      let pickup_score = p.potentialPickupReward;
+      p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
 
-      this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickup_score });
+      // JUST FOR DEBUGGING
+      function randomIntFromInterval(min, max) { // min and max included 
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      const rndInt = randomIntFromInterval(1, 6);
+      p.calculatePotentialPickUpRewardSlave({ x: 1, y: 8 }, randomIntFromInterval(1, 3), 1, this.mapStore, clockPenalty)
+
+
+      let pickUpScoreMaster = p.potentialPickupReward;
+      let pickUpScoreSlave = p.potentialPickUpRewardSlave;
+
+      console.log("Parcel ", p.id, " - Master: ", pickUpScoreMaster, " - Slave: ", pickUpScoreSlave);
+
+      //this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickup_score });
+
+      if (pickUpScoreMaster > pickUpScoreSlave) {
+        this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickUpScoreMaster });
+      }
+      else {
+        //we need to delegate the pickup to a slave agent
+        console.log("  🐎 We need to implement this one -->Delegating pickup to slave agent for parcel🐎 ", p.id);
+      }
     }
 
     //If we have parcels, consider deposit option
