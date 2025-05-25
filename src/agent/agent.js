@@ -1,4 +1,4 @@
-import { moveAndWait} from "../actions/movement.js";
+import { moveAndWait, randomMoveAndBack} from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -12,6 +12,8 @@ import { log } from "../utils/log.js";
 import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
+
+const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
 
 export class Agent {
   /**
@@ -48,6 +50,10 @@ export class Agent {
     this.intentions = []; // Intensions
 
     this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
+
+    this.isExploring = false;
+    this.isCamping = false;
+    this.campingStartFrame = 0;
 
     // Log section
     this.logLevels = [];
@@ -227,20 +233,46 @@ export class Agent {
   async achieveExplore(isEqualToLastIntention, getNewPath) {
     this.log(LOG_LEVELS.AGENT, "EXPLORE");
 
+    const wasCamping = this.isCamping;
+
+    const isOnSpawn = this.mapStore.map.get(coord2Key(this.me)) === TILE_TYPES.SPAWN;
+    const spawnIsSparse = this.mapStore.isSpawnSparse;
+
+    if (wasCamping) {
+      this.isCamping = spawnIsSparse && (this.me.frame - this.campingStartFrame < CAMP_TIME);
+    }
+    else {
+      this.isCamping = !this.isExploring && spawnIsSparse && isOnSpawn;
+    }
+
     // If spawn is not sparse OR we are not on a green tile
-    if (!this.mapStore.isSpawnSparse 
-        || this.mapStore.map.get(coord2Key(this.me)) !== TILE_TYPES.SPAWN) {
-
-      let spawnTileCoord = this.mapStore.randomSpawnTile;
-
+    if (!this.isCamping) {
+      
       if (getNewPath) {
+        let spawnTileCoord = this.mapStore.randomSpawnTile;
+        this.isExploring = true;
         this.getNewPath(spawnTileCoord);
       }
-      else if (!isEqualToLastIntention) {
+      else if (!isEqualToLastIntention || wasCamping) {
+        let spawnTileCoord = this.mapStore.randomSpawnTile;
+        this.isExploring = true;
         this.getPath(spawnTileCoord);
       }
 
       this.oneStep();
+      if (this.pathIndex >= this.path.length) {
+        this.isExploring = false;
+      }
+    }
+    // Camping behaviour
+    else {
+      if (!wasCamping) {
+        this.campingStartFrame = this.me.frame;
+      }
+
+      this.isMoving = true;
+      await randomMoveAndBack(this.client, this.me, this.mapStore);
+      this.isMoving = false;
     }
   }
 
