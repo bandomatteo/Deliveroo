@@ -17,18 +17,21 @@ export class Agent {
   /**
    * @param {DeliverooClient} client
    * @param {Me}              me
+   * @param {Me}             mate
    * @param {ParcelsStore}    parcels
    * @param {MapStore}        mapStore
    * @param {AgentStore}      agentStore
    * @param {ServerConfig}    serverConfig
    */
-  constructor(client, me, parcels, mapStore, agentStore, serverConfig) {
+  constructor(client, me, mate, parcels, mapStore, agentStore, serverConfig, isMaster) {
     this.client = client;
     this.me = me;
+    this.mate = mate; // For master agent, the mate is the slave agent
     this.parcels = parcels;
     this.mapStore = mapStore;
     this.agentStore = agentStore;
     this.serverConfig = serverConfig;
+    this.isMaster = isMaster; // Flag to check if it's a master agent
 
     // BDI structures
     this.desires = [];
@@ -55,6 +58,7 @@ export class Agent {
     // Log section
     this.logLevels = [];
     this.logLevels.push(LOG_LEVELS.AGENT);
+    this.logLevels.push(LOG_LEVELS.AGENT2);
     // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
@@ -104,30 +108,34 @@ export class Agent {
 
     // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
-      // Il parcel calcola il reward potenziale considerando lo stato attuale dell'agente
-      p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
 
-      // JUST FOR TESTING
-      function randomIntFromInterval(min, max) {  
-        return Math.floor(Math.random() * (max - min + 1) + min);
+      if ( this.isMaster === true){
+        p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
+      p.calculatePotentialPickUpRewardSlave(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
       }
-      // Simulate a slave agent picking up the parcel
-      p.calculatePotentialPickUpRewardSlave({ x: 1, y: 8 }, randomIntFromInterval(1, 3), 1, this.mapStore, clockPenalty)
+      else{
+        p.calculatePotentialPickUpRewardMaster(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
+        p.calculatePotentialPickUpRewardSlave(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
 
+      }
+        
 
-      let pickUpScoreMaster = p.potentialPickupReward;
+      let pickUpScoreMaster = p.potentialPickUpReward;
       let pickUpScoreSlave = p.potentialPickUpRewardSlave;
 
-      console.log("Parcel ", p.id, " - Master: ", pickUpScoreMaster, " - Slave: ", pickUpScoreSlave);
+      //console.log("Parcel ", p.id, " - Master: ", pickUpScoreMaster, " - Slave: ", pickUpScoreSlave);
 
       //this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickup_score });
 
-      if (pickUpScoreMaster > pickUpScoreSlave) {
-        this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickUpScoreMaster });
+      if (this.isMaster === true) {
+        if (pickUpScoreMaster >= pickUpScoreSlave) {
+          this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickUpScoreMaster });
+        }
       }
       else {
-        //we need to delegate the pickup to a slave agent
-        console.log("  🐎 We need to implement this one -->Delegating pickup to slave agent for parcel🐎 ", p.id);
+        if (pickUpScoreSlave > pickUpScoreMaster) {
+          this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickUpScoreSlave });
+        }
       }
     }
 
@@ -204,7 +212,14 @@ export class Agent {
   }
 
   async achievePickup(p, isEqualToLastIntention, getNewPath) {
-    this.log(LOG_LEVELS.AGENT, "GO_PICKUP");
+    
+    if (this.isMaster === true) {
+      console.log(this.me.x,this.me.y, this.mate.x,this.mate.y);
+      this.log(LOG_LEVELS.AGENT, "GO_PICKUP", p.id,p.potentialPickUpReward,p.potentialPickUpRewardSlave );}
+      else {
+        this.log(LOG_LEVELS.AGENT2, "GO_PICKUP",p.id,p.potentialPickUpReward,p.potentialPickUpRewardSlave);
+      }
+    //this.log(LOG_LEVELS.AGENT, "GO_PICKUP");
 
     // move towards the parcel and pick up
     if (!isEqualToLastIntention && !getNewPath) {
@@ -222,7 +237,12 @@ export class Agent {
   }
 
   async achieveDeposit(isEqualToLastIntention, getNewPath) {
-    this.log(LOG_LEVELS.AGENT, "GO_DEPOSIT");
+    //this.log(LOG_LEVELS.AGENT, "GO_DEPOSIT");
+    if (this.isMaster === true) {
+      this.log(LOG_LEVELS.AGENT, LOG_LEVELS.AGENT, "GO_DEPOSIT");}
+      else {
+        this.log(LOG_LEVELS.AGENT2, LOG_LEVELS.AGENT2, "GO_DEPOSIT");
+      }
     //const mePos = { x: this.me.x, y: this.me.y };
 
     // use helper to move to nearest base
@@ -250,7 +270,13 @@ export class Agent {
   }
 
   async achieveExplore(isEqualToLastIntention, getNewPath) {
-    this.log(LOG_LEVELS.AGENT, "EXPLORE");
+    //this.log(LOG_LEVELS.AGENT, "EXPLORE");
+
+    if (this.isMaster === true) {
+      this.log(LOG_LEVELS.AGENT, "EXPLORE");}
+      else {
+        this.log(LOG_LEVELS.AGENT2, "EXPLORE");
+      }
 
     // If spawn is not sparse OR we are not on a green tile
     if (!this.mapStore.isSpawnSparse

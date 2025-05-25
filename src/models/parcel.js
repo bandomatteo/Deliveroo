@@ -26,9 +26,9 @@ export class Parcel {
             this.calculateNearestBase(mapStore);
         }
 
-        this.potentialPickupReward =  0; // Reward potenziale per il pickup
+        this.potentialPickUpReward = 0; // Reward potenziale per il pickup
         this.potentialPickUpRewardSlave = 0;
-        
+
     }
 
     /**
@@ -39,7 +39,7 @@ export class Parcel {
         let [base, minDist] = mapStore.nearestBase(this);
 
         this.baseDistance = minDist;
-        this.nearestBase = {x : base.x, y : base.y};
+        this.nearestBase = { x: base.x, y: base.y };
     }
 
     /**
@@ -67,42 +67,48 @@ export class Parcel {
      *
      */
     calculatePotentialPickUpRewardMaster(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
-        if (this.carriedBy) 
+        if (this.carriedBy)
             return -Infinity; // Already carried, no reward
 
+        const [base, minDist] = mapStore.nearestBase(this);
+        this.baseDistance = minDist;
+
         const distanceToParcel = mapStore.distance(agentPos, this);
-        
+
         // Total reward = sum of all carried parcels + this parcel's reward
         const totalReward = carriedValue + this.reward;
 
         const totalDistance = distanceToParcel + this.baseDistance;
-        
+
         const totalParcels = carriedCount + 1;
-        
+
         // reward potenziale: reward totale - costo temporale del viaggio
         const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
-        
-        this.potentialPickupReward = potentialReward;
+
+        this.potentialPickUpReward = potentialReward;
     }
 
     calculatePotentialPickUpRewardSlave(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
-        if (this.carriedBy) 
+        if (this.carriedBy)
             return -Infinity; // Already carried, no reward
 
+        const [base, minDist] = mapStore.nearestBase(this);
+        this.baseDistance = minDist;
+
         const distanceToParcel = mapStore.distance(agentPos, this);
-        
+
         // Total reward = sum of all carried parcels + this parcel's reward
         const totalReward = carriedValue + this.reward;
 
         const totalDistance = distanceToParcel + this.baseDistance;
-        
+
         const totalParcels = carriedCount + 1;
-        
+
         // reward potenziale: reward totale - costo temporale del viaggio
         const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
-        
+
         this.potentialPickUpRewardSlave = potentialReward;
     }
 
-    
+
 }

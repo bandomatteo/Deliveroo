@@ -7,8 +7,11 @@ import { ParcelsStore } from "../models/parcelsStore.js";
     * Whenever we need to call the API, we will use this class.
 */
 export default class DeliverooClient {
-  constructor() {
-    this.client = new DeliverooApi(config.host, config.token);
+  constructor(isMaster = true) {
+    if (isMaster === true)
+      this.client = new DeliverooApi(config.host, config.token);
+    else 
+    this.client = new DeliverooApi(config.host, config.tokenSlave);
   }
 
   onYou(callback) {
