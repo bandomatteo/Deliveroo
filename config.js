@@ -36,7 +36,8 @@ if (!loadedPath) {
 
 const CONFIG = {
   host: process.env.HOST,
-  token: process.env.TOKEN 
+  token: process.env.TOKEN ,
+  tokenSlave: process.env.TOKEN_SLAVE,
 }
 
 console.log("Config loaded:", CONFIG); 
