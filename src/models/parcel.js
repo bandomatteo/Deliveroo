@@ -70,9 +70,6 @@ export class Parcel {
         if (this.carriedBy)
             return -Infinity; // Already carried, no reward
 
-        const [base, minDist] = mapStore.nearestBase(this);
-        this.baseDistance = minDist;
-
         const distanceToParcel = mapStore.distance(agentPos, this);
 
         // Total reward = sum of all carried parcels + this parcel's reward
@@ -91,9 +88,6 @@ export class Parcel {
     calculatePotentialPickUpRewardSlave(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
         if (this.carriedBy)
             return -Infinity; // Already carried, no reward
-
-        const [base, minDist] = mapStore.nearestBase(this);
-        this.baseDistance = minDist;
 
         const distanceToParcel = mapStore.distance(agentPos, this);
 

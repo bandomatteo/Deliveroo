@@ -53,25 +53,6 @@ async function main() {
     mapStore.calculateSparseness(serverConfig);
   });
 
-  // Eventi per lo slave (condivide la stessa mappa)
-  client2.onTile(({ x, y, type }) =>
-    mapStore.addTile({ x, y, type: parseInt(type) })
-  );
-  
-  client2.onConfig(config => {
-    serverConfig.updateConfig(config);
-  });
-
-  client2.onMap((w, h, tiles) => {
-    mapStore.mapSize = w;
-    tiles.forEach(t =>
-      mapStore.addTile({ x: t.x, y: t.y, type: t.type })
-    );
-    console.log(`Slave Map loaded (${tiles.length} tiles)`);
-    mapStore.calculateDistances();
-    mapStore.calculateSparseness(serverConfig);
-  });
-
   client1.onParcelsSensing(pp => {
     //console.log("Master received parcels, mapSize:", mapStore.mapSize);
     if (mapStore.mapSize > 0) {
