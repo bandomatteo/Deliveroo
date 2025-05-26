@@ -110,10 +110,18 @@ export class Agent {
     for (const p of this.parcels.available) {
 
       if ( this.isMaster === true){
+        this.me.x = Math.round(this.me.x);
+        this.me.y = Math.round(this.me.y);
+      this.mate.x = Math.round(this.mate.x);
+      this.mate.y = Math.round(this.mate.y);
         p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
       p.calculatePotentialPickUpRewardSlave(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
       }
       else{
+        this.me.x = Math.round(this.me.x);
+        this.me.y = Math.round(this.me.y);
+        this.mate.x = Math.round(this.mate.x);
+        this.mate.y = Math.round(this.mate.y);
         p.calculatePotentialPickUpRewardMaster(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
         p.calculatePotentialPickUpRewardSlave(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
 
