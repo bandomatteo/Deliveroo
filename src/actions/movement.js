@@ -2,6 +2,9 @@ import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
 import { astarSearch, direction } from "../utils/astar.js";
+import { DIRECTIONS, oppositeDirection } from "../utils/directions.js";
+import { coord2Key } from "../utils/hashMap.js";
+import { TILE_TYPES } from "../utils/tile.js";
 
 /**
  * Ensures movement command is only sent after previous is complete.
@@ -56,7 +59,7 @@ export async function smartMoveToNearestBase(client, me, mapStore) {
 
 }
 
-export async function smartMoveToNearestBaseAndPutDown(client, me , mapStore, parcels) {
+export async function smartMoveToNearestBaseAndPutDown(client, me, mapStore, parcels) {
   const [base] = mapStore.nearestBase(me);
   if (base) {
     await smartMove(client, me, base, mapStore);
@@ -66,5 +69,34 @@ export async function smartMoveToNearestBaseAndPutDown(client, me , mapStore, pa
       client.emitPutdown(parcels, me.id);
     }
   }
+}
+
+/**
+ * @param {DeliverooClient} client
+ * @param {Me} me
+ * @param {MapStore} mapStore
+ */
+export async function randomMoveAndBack(client, me, mapStore) {
+  let possibleMoves = [];
+
+  const rightCell = mapStore.map.get(coord2Key({x : me.x + 1, y : me.y}))
+  const leftCell = mapStore.map.get(coord2Key({x : me.x - 1, y : me.y}))
+  const upCell = mapStore.map.get(coord2Key({x : me.x, y : me.y + 1}))
+  const downCell = mapStore.map.get(coord2Key({x : me.x, y : me.y - 1}))
+
+  if (rightCell !== TILE_TYPES.EMPTY)
+    possibleMoves.push(DIRECTIONS.RIGHT);
+  if (leftCell !== TILE_TYPES.EMPTY)
+    possibleMoves.push(DIRECTIONS.LEFT);
+  if (upCell !== TILE_TYPES.EMPTY)
+    possibleMoves.push(DIRECTIONS.UP);
+  if (downCell !== TILE_TYPES.EMPTY)
+    possibleMoves.push(DIRECTIONS.DOWN);
+  
+  const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+  const secondDir = oppositeDirection(randomDir);
+
+  await client.emitMove(randomDir);
+  await client.emitMove(secondDir);
 }
 
