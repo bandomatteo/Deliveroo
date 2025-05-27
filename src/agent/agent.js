@@ -13,6 +13,7 @@ import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
 import { Communication } from "../models/communication.js";
+import { getPickupScore } from "../utils/misc.js";
 
 const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
 
@@ -55,8 +56,6 @@ export class Agent {
     this.penaltyCounter = 0;
     this.oldPenalty = null;
 
-
-
     this.oldTime = null;    // Keep track of last loop time
 
     this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
@@ -67,8 +66,8 @@ export class Agent {
 
     // Log section
     this.logLevels = [];
-    this.logLevels.push(LOG_LEVELS.AGENT);
-    this.logLevels.push(LOG_LEVELS.AGENT2);
+    this.logLevels.push(LOG_LEVELS.MASTER);
+    this.logLevels.push(LOG_LEVELS.SLAVE);
     // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
@@ -117,34 +116,17 @@ export class Agent {
     let carried_count = myParcels.length;
     const clockPenalty = this.serverConfig.clock / 1000;
 
+    const roundedMe = {x : Math.round(this.me.x), y : Math.round(this.me.y)};
+    const roundedMate = {x : Math.round(this.mate.x), y : Math.round(this.mate.y)};
+
     // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
 
-      if ( this.isMaster === true){
-        this.me.x = Math.round(this.me.x);
-        this.me.y = Math.round(this.me.y);
-      this.mate.x = Math.round(this.mate.x);
-      this.mate.y = Math.round(this.mate.y);
-        p.calculatePotentialPickUpRewardMaster(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
-      p.calculatePotentialPickUpRewardSlave(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
-      }
-      else{
-        this.me.x = Math.round(this.me.x);
-        this.me.y = Math.round(this.me.y);
-        this.mate.x = Math.round(this.mate.x);
-        this.mate.y = Math.round(this.mate.y);
-        p.calculatePotentialPickUpRewardMaster(this.mate, carried_value, carried_count, this.mapStore, clockPenalty);
-        p.calculatePotentialPickUpRewardSlave(this.me, carried_value, carried_count, this.mapStore, clockPenalty);
-
-      }
-        
+      p.calculatePotentialPickUpReward(roundedMe, this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
+      p.calculatePotentialPickUpReward(roundedMate, !this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
 
       let pickUpScoreMaster = p.potentialPickUpReward;
       let pickUpScoreSlave = p.potentialPickUpRewardSlave;
-
-      //console.log("Parcel ", p.id, " - Master: ", pickUpScoreMaster, " - Slave: ", pickUpScoreSlave);
-
-      //this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: pickup_score });
 
       if (this.isMaster === true) {
         if (pickUpScoreMaster >= pickUpScoreSlave) {
@@ -160,24 +142,19 @@ export class Agent {
 
     // Dropped parcels
     if (this.communication.droppedValue > 0 && this.communication.agentToPickup === this.me.id) {
-      const distanceToParcel = this.mapStore.distance(this.me, this.communication.droppedCoord);
-
-      // Total reward = sum of all carried parcels + this parcel's reward
-      const totalReward = carried_value + this.communication.droppedValue;
-      const totalDistance = distanceToParcel + this.communication.droppedBaseDistance;
-      const totalParcels = carried_count + 1;
-
-      // reward potenziale: reward totale - costo temporale del viaggio
-      const dropPickupReward = totalReward - (totalDistance * totalParcels * clockPenalty);
-      this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: this.communication.droppedCoord, score: dropPickupReward });
+      const dropPickupReward = getPickupScore(this.me, this.communication.droppedCoord, carried_value, carried_count, 
+                                              this.communication.droppedValue, this.communication.droppedBaseDistance, 
+                                              clockPenalty, this.mapStore, this.serverConfig);
+      
+      this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: this.communication.droppedCoord, score: dropPickupReward, isFromDropped : true });
     }
 
-    //If we have a mate close to us, consider the possibility to drop a parcel
-    if (this.mapStore.distance (this.me, this.mate) <= 1 && carried_count > 0) {
+    //If we have a mate close to us, drop carried parcels
+    if (this.mapStore.distance(roundedMe, roundedMate) <= 1 && carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let [base2, minDistMate] = this.mapStore.nearestBase(this.mate);
+      let [baseMate, minDistMate] = this.mapStore.nearestBase(this.mate);
 
-      if (minDist >minDistMate) {
+      if (minDist > minDistMate) {
         this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
       }
     }
@@ -194,11 +171,11 @@ export class Agent {
     this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
 
-  
 
   filterIntentions() {
     this.intentions = this.desires.sort((a, b) => { return b.score - a.score });
   }
+
 
   async act() {
     for (let intentionIndex = 0; intentionIndex < this.intentions.length; intentionIndex++) {
@@ -238,20 +215,19 @@ export class Agent {
             }
           }
 
-
-
           this.lastIntention = intention;
           // If program is here, the parcel can be pickup by us
-          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <= - 3);
+          const isFromDropped = intention.hasOwnProperty("isFromDropped") && intention.isFromDropped;
+          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <= - 3, isFromDropped);
         case INTENTIONS.GO_DEPOSIT:
           this.lastIntention = intention;
           return this.achieveDeposit(isEqualToLastIntention, this.penaltyCounter <= - 3);
+        case INTENTIONS.DROP_AND_GO_AWAY:
+          this.lastIntention = intention;
+          return this.achieveDropAndGoAway();
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
           return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <= - 3);
-          case INTENTIONS.DROP_AND_GO_AWAY:
-            this.lastIntention = intention;
-            return this.achieveDropAndGoAway();
         default:
           this.lastIntention = intention;
           return;
@@ -259,19 +235,19 @@ export class Agent {
     }
   }
 
-  async achievePickup(p, isEqualToLastIntention, getNewPath) {
+  async achievePickup(p, isEqualToLastIntention, getNewPath, isFromDropped) {
     
     if (this.isMaster === true) {
       console.log(this.me.x,this.me.y, this.mate.x,this.mate.y);
-      this.log(LOG_LEVELS.AGENT, "GO_PICKUP", p.id,p.potentialPickUpReward,p.potentialPickUpRewardSlave );}
-      else {
-        this.log(LOG_LEVELS.AGENT2, "GO_PICKUP",p.id,p.potentialPickUpReward,p.potentialPickUpRewardSlave);
-      }
+      // this.log(LOG_LEVELS.AGENT, "GO_PICKUP", p.id, p.potentialPickUpReward, p.potentialPickUpRewardSlave );
+    }
+    else {
+      // this.log(LOG_LEVELS.AGENT2, "GO_PICKUP", p.id, p.potentialPickUpReward, p.potentialPickUpRewardSlave);
+    }
     //this.log(LOG_LEVELS.AGENT, "GO_PICKUP");
 
-    // move towards the parcel and pick up
+    // Move towards the parcel and pick up
     if (!isEqualToLastIntention && !getNewPath) {
-      // await smartMove(this.client, this.me, p, this.mapStore);
       this.getPath(p);
     }
     else if (getNewPath) {
@@ -281,19 +257,22 @@ export class Agent {
     this.oneStep();
     if (this.me.x === p.x && this.me.y === p.y) {
       await this.client.emitPickup();
+
+      if (isFromDropped) {
+        this.communication.resetDrop();
+      }
     }
   }
 
   async achieveDeposit(isEqualToLastIntention, getNewPath) {
     //this.log(LOG_LEVELS.AGENT, "GO_DEPOSIT");
     if (this.isMaster === true) {
-      this.log(LOG_LEVELS.AGENT, LOG_LEVELS.AGENT, "GO_DEPOSIT");}
-      else {
-        this.log(LOG_LEVELS.AGENT2, LOG_LEVELS.AGENT2, "GO_DEPOSIT");
-      }
-    //const mePos = { x: this.me.x, y: this.me.y };
+      this.log(LOG_LEVELS.MASTER, LOG_LEVELS.MASTER, "GO_DEPOSIT");}
+    else {
+      this.log(LOG_LEVELS.SLAVE, LOG_LEVELS.SLAVE, "GO_DEPOSIT");
+    }
 
-    // use helper to move to nearest base
+    // Use helper to move to nearest base
     if (!isEqualToLastIntention && !getNewPath) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
@@ -319,9 +298,10 @@ export class Agent {
 
   async achieveDropAndGoAway() {
     let carried_value = this.parcels.carried(this.me.id).reduce((sum, parcel) => sum + parcel.reward, 0);
-    // 1. Setto
-    // 2. Droppo
-    // 3. Mi muovo via
+    
+    // 1. Set dropped
+    // 2. Putdown parcels
+    // 3. Go away
 
     this.isMoving = true
 
@@ -329,18 +309,15 @@ export class Agent {
     await this.client.emitPutdown(this.parcels, this.me.id);
     await dropAndGoAway(this.client, this.me,this.mate, this.mapStore);
     this.isMoving = false;
-
   }
 
   async achieveExplore(isEqualToLastIntention, getNewPath) {
-    //this.log(LOG_LEVELS.AGENT, "EXPLORE");
 
     if (this.isMaster === true) {
-      this.log(LOG_LEVELS.AGENT, "EXPLORE");}
-      else {
-        this.log(LOG_LEVELS.AGENT2, "EXPLORE");
-      }
-
+      this.log(LOG_LEVELS.MASTER, "EXPLORE");}
+    else {
+      this.log(LOG_LEVELS.SLAVE, "EXPLORE");
+    }
 
     const wasCamping = this.isCamping;
 

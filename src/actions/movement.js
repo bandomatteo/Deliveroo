@@ -107,61 +107,46 @@ export async function randomMoveAndBack(client, me, mapStore) {
  */
 export async function dropAndGoAway(client, me,mate, mapStore) {
   let possibleMoves = [];
-  let myPos = {x:undefined, y: undefined};
-  
+  let myPos = {x : undefined, y : undefined};
 
+  for (let i = 0; i < 3; i++) {
+    possibleMoves = [];
 
-for (let i = 0; i < 3; i++) {
-  possibleMoves = [];
+    const rightCell = { x: me.x + 1, y: me.y }
+    const leftCell = { x: me.x - 1, y: me.y }
+    const upCell = { x: me.x, y: me.y + 1 }
+    const downCell = { x: me.x, y: me.y - 1 }
 
-  const rightCell = { x: me.x + 1, y: me.y }
-  const leftCell = { x: me.x - 1, y: me.y }
-  const upCell = { x: me.x, y: me.y + 1 }
-  const downCell = { x: me.x, y: me.y - 1 }
+    const rightCellType = mapStore.map.get(coord2Key(rightCell))
+    const leftCellType = mapStore.map.get(coord2Key(leftCell))
+    const upCellType = mapStore.map.get(coord2Key(upCell))
+    const downCellType = mapStore.map.get(coord2Key(downCell))
 
-  const rightCellType = mapStore.map.get(coord2Key(rightCell))
-  const leftCellType = mapStore.map.get(coord2Key(leftCell))
-  const upCellType = mapStore.map.get(coord2Key(upCell))
-  const downCellType = mapStore.map.get(coord2Key(downCell))
+    if (rightCellType !== TILE_TYPES.EMPTY 
+        && (rightCell.x === mate.x && rightCell.y === mate.y)
+        && (rightCell.x === myPos.x && rightCell.y === myPos.y))
+      possibleMoves.push(DIRECTIONS.RIGHT);
 
-  if (rightCellType !== TILE_TYPES.EMPTY &&  
-      rightCell.x !==mate.x &&
-      rightCell.y !== mate.y && 
-      rightCell.x !== myPos.x &&
-      rightCell.y !== myPos.y)
-    possibleMoves.push(DIRECTIONS.RIGHT);
+    if (leftCellType !== TILE_TYPES.EMPTY
+        && (leftCell.x === mate.x && leftCell.y === mate.y)
+        && (leftCell.x === myPos.x && leftCell.y === myPos.y))
+      possibleMoves.push(DIRECTIONS.LEFT);
 
-  if (leftCellType !== TILE_TYPES.EMPTY &&
-      leftCell.x !== mate.x &&
-      leftCell.y !== mate.y &&
-      leftCell.x !== myPos.x &&
-      leftCell.y !== myPos.y)
-    possibleMoves.push(DIRECTIONS.LEFT);
+    if (upCellType !== TILE_TYPES.EMPTY
+        && (upCell.x === mate.x && upCell.y === mate.y) 
+        && (upCell.x === myPos.x && upCell.y === myPos.y))
+      possibleMoves.push(DIRECTIONS.UP);
 
-  if (upCellType !== TILE_TYPES.EMPTY &&
-      upCell.x !== mate.x &&
-      upCell.y !== mate.y &&
-      upCell.x !== myPos.x &&
-      upCell.y !== myPos.y)
-    possibleMoves.push(DIRECTIONS.UP);
+    if (downCellType !== TILE_TYPES.EMPTY
+        && !(downCell.x === mate.x && downCell.y === mate.y)
+        && !(downCell.x === myPos.x && downCell.y === myPos.y))
+      possibleMoves.push(DIRECTIONS.DOWN);
 
-  if (downCellType !== TILE_TYPES.EMPTY &&
-      downCell.x !== mate.x &&
-      downCell.y !== mate.y &&
-      downCell.x !== myPos.x &&
-      downCell.y !== myPos.y)
-    possibleMoves.push(DIRECTIONS.DOWN);
+    myPos = { x: me.x, y: me.y }; // Set my position for the next iteration
 
-  myPos = { x: me.x, y: me.y }; // Reset my position for the next iteration
-  const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-  await client.emitMove(randomDir);
+    const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    await client.emitMove(randomDir);
   }
-
-
-  //const secondDir = oppositeDirection(randomDir);
-
-  //await client.emitMove(randomDir);
-  //await client.emitMove(secondDir);
 }
 
 

@@ -1,4 +1,6 @@
+import { getPickupScore } from "../utils/misc.js";
 import { MapStore } from "./mapStore.js";
+import { ServerConfig } from "./serverConfig.js";
 
 export class Parcel {
     /**
@@ -58,52 +60,25 @@ export class Parcel {
 
     /**
      * Compute the potential reward for picking up this parcel
-     * @param {{x: number, y: number}} agentPos - Posizione dell'agente
+     * @param {{x: number, y: number}} agentPos - Agent position
+     * @param {boolean} isMaster
      * @param {number} carriedValue 
      * @param {number} carriedCount 
      * @param {MapStore} mapStore 
      * @param {number} clockPenalty 
-     * 
-     *
+     * @param {ServerConfig} config
      */
-    calculatePotentialPickUpRewardMaster(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
+    calculatePotentialPickUpReward(agentPos, isMaster, carriedValue, carriedCount, mapStore, clockPenalty, config) {
         if (this.carriedBy)
             return -Infinity; // Already carried, no reward
+        
+        const potentialReward = getPickupScore(agentPos, this, carriedValue, carriedCount, this.reward, this.baseDistance, clockPenalty, mapStore, config);
 
-        const distanceToParcel = mapStore.distance(agentPos, this);
-
-        // Total reward = sum of all carried parcels + this parcel's reward
-        const totalReward = carriedValue + this.reward;
-
-        const totalDistance = distanceToParcel + this.baseDistance;
-
-        const totalParcels = carriedCount + 1;
-
-        // reward potenziale: reward totale - costo temporale del viaggio
-        const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
-
-        this.potentialPickUpReward = potentialReward;
+        if (isMaster) {
+            this.potentialPickUpReward = potentialReward;
+        }
+        else {
+            this.potentialPickUpRewardSlave = potentialReward;
+        }
     }
-
-    calculatePotentialPickUpRewardSlave(agentPos, carriedValue, carriedCount, mapStore, clockPenalty) {
-        if (this.carriedBy)
-            return -Infinity; // Already carried, no reward
-
-        const distanceToParcel = mapStore.distance(agentPos, this);
-
-        // Total reward = sum of all carried parcels + this parcel's reward
-        const totalReward = carriedValue + this.reward;
-
-        const totalDistance = distanceToParcel + this.baseDistance;
-
-        const totalParcels = carriedCount + 1;
-
-        // reward potenziale: reward totale - costo temporale del viaggio
-        const potentialReward = totalReward - (totalDistance * totalParcels * clockPenalty);
-
-        this.potentialPickUpRewardSlave = potentialReward;
-    }
-
-
-
 }
