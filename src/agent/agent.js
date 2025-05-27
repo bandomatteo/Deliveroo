@@ -110,6 +110,7 @@ export class Agent {
     */
   generateDesires() {
     this.desires = [];
+  
 
     let myParcels = this.parcels.carried(this.me.id);
     let carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
@@ -179,6 +180,7 @@ export class Agent {
       if (minDist >minDistMate) {
         this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
       }
+    }
 
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
@@ -191,7 +193,8 @@ export class Agent {
     // Explore come fallback
     this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
-}
+
+  
 
   filterIntentions() {
     this.intentions = this.desires.sort((a, b) => { return b.score - a.score });

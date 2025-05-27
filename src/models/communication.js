@@ -12,7 +12,7 @@ export class Communication {
         /**
          * @type {{x : number, y : number}}
          */
-        this.droppedCoord = null;
+        this.droppedCoord = { x: undefined, y: undefined };
         this.droppedBaseDistance = null;
     }
 

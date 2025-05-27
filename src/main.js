@@ -27,7 +27,7 @@ async function main() {
   const agent2 = new Agent(client2, me2,me1, parcels, mapStore, agentStore, communication, serverConfig,false);
 
   client1.onYou((payload, time) => {
-   // console.log("Master received onYou:", payload);
+    //console.log("Master received onYou:", payload);
     me1.update(payload, time);
   });
   
