@@ -5,7 +5,7 @@ export class Parcel {
      * @param {{id : string, carriedBy? : string, x : number, y : number, reward : number}} parcel 
      * @param { MapStore } mapStore 
      */
-    constructor(parcel, mapStore, frame) {
+    constructor(parcel, mapStore, frame, parcelStore) {
         this.id = parcel.id;
         this.carriedBy = parcel.carriedBy;
         this.x = parcel.x;
@@ -103,6 +103,7 @@ export class Parcel {
 
         this.potentialPickUpRewardSlave = potentialReward;
     }
+
 
 
 }

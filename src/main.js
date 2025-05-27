@@ -5,6 +5,7 @@ import { MapStore }    from "./models/mapStore.js";
 import { Agent }       from "./agent/agent.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
+import { Communication } from "./models/communication.js";
 
 async function main() {
   console.log("Creating clients...");
@@ -20,9 +21,10 @@ async function main() {
   const mapStore = new MapStore();
   const agentStore = new AgentStore();
   const serverConfig = new ServerConfig();
+  const communication = new Communication();
 
-  const agent1    = new Agent(client1, me1,me2, parcels, mapStore, agentStore, serverConfig,true);
-  const agent2 = new Agent(client2, me2,me1, parcels, mapStore, agentStore, serverConfig,false);
+  const agent1    = new Agent(client1, me1,me2, parcels, mapStore, agentStore,communication, serverConfig,true);
+  const agent2 = new Agent(client2, me2,me1, parcels, mapStore, agentStore, communication, serverConfig,false);
 
   client1.onYou((payload, time) => {
    // console.log("Master received onYou:", payload);

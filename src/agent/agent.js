@@ -1,4 +1,4 @@
-import { moveAndWait, randomMoveAndBack} from "../actions/movement.js";
+import { moveAndWait, randomMoveAndBack, dropAndGoAway } from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -12,6 +12,7 @@ import { log } from "../utils/log.js";
 import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
+import { Communication } from "../models/communication.js";
 
 const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
 
@@ -23,9 +24,11 @@ export class Agent {
    * @param {ParcelsStore}    parcels
    * @param {MapStore}        mapStore
    * @param {AgentStore}      agentStore
+   * @param {Communication}   communication
    * @param {ServerConfig}    serverConfig
+   * @param {boolean}         isMaster - Flag to check if it's a master agent
    */
-  constructor(client, me, mate, parcels, mapStore, agentStore, serverConfig, isMaster) {
+  constructor(client, me, mate, parcels, mapStore, agentStore, communication, serverConfig, isMaster) {
     this.client = client;
     this.me = me;
     this.mate = mate; // For master agent, the mate is the slave agent
@@ -34,6 +37,7 @@ export class Agent {
     this.agentStore = agentStore;
     this.serverConfig = serverConfig;
     this.isMaster = isMaster; // Flag to check if it's a master agent
+    this.communication = communication; // Communication model for the agent
 
     // BDI structures
     this.desires = [];
@@ -153,6 +157,29 @@ export class Agent {
       }
     }
 
+    // Dropped parcels
+    if (this.communication.droppedValue > 0 && this.communication.agentToPickup === this.me.id) {
+      const distanceToParcel = this.mapStore.distance(this.me, this.communication.droppedCoord);
+
+      // Total reward = sum of all carried parcels + this parcel's reward
+      const totalReward = carried_value + this.communication.droppedValue;
+      const totalDistance = distanceToParcel + this.communication.droppedBaseDistance;
+      const totalParcels = carried_count + 1;
+
+      // reward potenziale: reward totale - costo temporale del viaggio
+      const dropPickupReward = totalReward - (totalDistance * totalParcels * clockPenalty);
+      this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: this.communication.droppedCoord, score: dropPickupReward });
+    }
+
+    //If we have a mate close to us, consider the possibility to drop a parcel
+    if (this.mapStore.distance (this.me, this.mate) <= 1 && carried_count > 0) {
+      let [base, minDist] = this.mapStore.nearestBase(this.me);
+      let [base2, minDistMate] = this.mapStore.nearestBase(this.mate);
+
+      if (minDist >minDistMate) {
+        this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
+      }
+
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
@@ -164,6 +191,7 @@ export class Agent {
     // Explore come fallback
     this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
+}
 
   filterIntentions() {
     this.intentions = this.desires.sort((a, b) => { return b.score - a.score });
@@ -218,6 +246,9 @@ export class Agent {
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
           return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <= - 3);
+          case INTENTIONS.DROP_AND_GO_AWAY:
+            this.lastIntention = intention;
+            return this.achieveDropAndGoAway();
         default:
           this.lastIntention = intention;
           return;
@@ -281,6 +312,21 @@ export class Agent {
       await this.client.emitPutdown(this.parcels, this.me.id);
       this.isMoving = false;
     }
+  }
+
+  async achieveDropAndGoAway() {
+    let carried_value = this.parcels.carried(this.me.id).reduce((sum, parcel) => sum + parcel.reward, 0);
+    // 1. Setto
+    // 2. Droppo
+    // 3. Mi muovo via
+
+    this.isMoving = true
+
+    this.communication.setDropped(this.me,carried_value,this.mate.id, this.mapStore);
+    await this.client.emitPutdown(this.parcels, this.me.id);
+    await dropAndGoAway(this.client, this.me,this.mate, this.mapStore);
+    this.isMoving = false;
+
   }
 
   async achieveExplore(isEqualToLastIntention, getNewPath) {
