@@ -11,7 +11,7 @@ export default class DeliverooClient {
     if (isMaster === true)
       this.client = new DeliverooApi(config.host, config.token);
     else 
-    this.client = new DeliverooApi(config.host, config.tokenSlave);
+      this.client = new DeliverooApi(config.host, config.tokenSlave);
   }
 
   onYou(callback) {

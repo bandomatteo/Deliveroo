@@ -72,7 +72,7 @@ export class Parcel {
         if (this.carriedBy)
             return -Infinity; // Already carried, no reward
         
-        const potentialReward = getPickupScore(agentPos, this, carriedValue, carriedCount, this.reward, this.baseDistance, clockPenalty, mapStore, config);
+        const potentialReward = getPickupScore(agentPos, this, carriedValue, carriedCount, this.reward, 1, this.baseDistance, clockPenalty, mapStore, config);
 
         if (isMaster) {
             this.potentialPickUpReward = potentialReward;

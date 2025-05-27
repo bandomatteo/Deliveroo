@@ -16,6 +16,7 @@ import { Communication } from "../models/communication.js";
 import { getPickupScore } from "../utils/misc.js";
 
 const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
+const AGENT_TIME = 0;  // camp time for agent collision in Seconds
 
 export class Agent {
   /**
@@ -51,18 +52,18 @@ export class Agent {
     this.pathIndex = 0; // Move to perform (from path)
     this.path = [];     // Path got from A*
 
-
-    // Penalty tracking
-    this.penaltyCounter = 0;
-    this.oldPenalty = null;
-
     this.oldTime = null;    // Keep track of last loop time
 
     this.isMoving = false;  // flag to check if it's already perfoming an action -> to not get penalties
 
+    // Explore timers
     this.isExploring = false;
     this.isCamping = false;
     this.campingStartFrame = 0;
+
+    // Agent collision timers
+    this.isColliding = false;
+    this.agentCollisionStartTime = 0;
 
     // Log section
     this.logLevels = [];
@@ -87,20 +88,6 @@ export class Agent {
 
     // Update parcels
     this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size, this.serverConfig);
-
-    //update penalty
-    if (this.oldPenalty === null) {
-      this.oldPenalty = this.me.penalty;
-    }
-    const penaltyDiff = this.me.penalty - this.oldPenalty;
-    this.oldPenalty = this.me.penalty;
-
-    if (penaltyDiff === 0) {
-      this.penaltyCounter = 0;
-    }
-    else {
-      this.penaltyCounter += penaltyDiff;
-    }
   }
 
   /**
@@ -143,8 +130,8 @@ export class Agent {
     // Dropped parcels
     if (this.communication.droppedValue > 0 && this.communication.agentToPickup === this.me.id) {
       const dropPickupReward = getPickupScore(this.me, this.communication.droppedCoord, carried_value, carried_count, 
-                                              this.communication.droppedValue, this.communication.droppedBaseDistance, 
-                                              clockPenalty, this.mapStore, this.serverConfig);
+                                              this.communication.droppedValue, this.communication.droppedQuantity, 
+                                              this.communication.droppedBaseDistance, clockPenalty, this.mapStore, this.serverConfig);
       
       this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: this.communication.droppedCoord, score: dropPickupReward, isFromDropped : true });
     }
@@ -162,7 +149,7 @@ export class Agent {
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let deposit_score = carried_value - minDist * carried_count * clockPenalty;
+      let deposit_score = carried_value - minDist * carried_count * clockPenalty / this.serverConfig.parcels_decaying_interval;
 
       this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
     }
@@ -218,16 +205,16 @@ export class Agent {
           this.lastIntention = intention;
           // If program is here, the parcel can be pickup by us
           const isFromDropped = intention.hasOwnProperty("isFromDropped") && intention.isFromDropped;
-          return this.achievePickup(p, isEqualToLastIntention, this.penaltyCounter <= - 3, isFromDropped);
+          return this.achievePickup(p, isEqualToLastIntention, isFromDropped);
         case INTENTIONS.GO_DEPOSIT:
           this.lastIntention = intention;
-          return this.achieveDeposit(isEqualToLastIntention, this.penaltyCounter <= - 3);
+          return this.achieveDeposit(isEqualToLastIntention);
         case INTENTIONS.DROP_AND_GO_AWAY:
           this.lastIntention = intention;
           return this.achieveDropAndGoAway();
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
-          return this.achieveExplore(isEqualToLastIntention, this.penaltyCounter <= - 3);
+          return this.achieveExplore(isEqualToLastIntention);
         default:
           this.lastIntention = intention;
           return;
@@ -235,26 +222,22 @@ export class Agent {
     }
   }
 
-  async achievePickup(p, isEqualToLastIntention, getNewPath, isFromDropped) {
+  async achievePickup(p, isEqualToLastIntention, isFromDropped) {
     
-    if (this.isMaster === true) {
-      console.log(this.me.x,this.me.y, this.mate.x,this.mate.y);
-      // this.log(LOG_LEVELS.AGENT, "GO_PICKUP", p.id, p.potentialPickUpReward, p.potentialPickUpRewardSlave );
+    if (this.isMaster) {
+      this.log(LOG_LEVELS.MASTER, "GO_PICKUP");
     }
     else {
-      // this.log(LOG_LEVELS.AGENT2, "GO_PICKUP", p.id, p.potentialPickUpReward, p.potentialPickUpRewardSlave);
+      this.log(LOG_LEVELS.SLAVE, "GO_PICKUP");
     }
-    //this.log(LOG_LEVELS.AGENT, "GO_PICKUP");
 
     // Move towards the parcel and pick up
-    if (!isEqualToLastIntention && !getNewPath) {
+    if (!isEqualToLastIntention) {
       this.getPath(p);
     }
-    else if (getNewPath) {
-      this.getNewPath(p);
-    }
 
-    this.oneStep();
+    this.oneStepCheckAgents(p);
+    // this.oneStep();
     if (this.me.x === p.x && this.me.y === p.y) {
       await this.client.emitPickup();
 
@@ -264,30 +247,23 @@ export class Agent {
     }
   }
 
-  async achieveDeposit(isEqualToLastIntention, getNewPath) {
-    //this.log(LOG_LEVELS.AGENT, "GO_DEPOSIT");
-    if (this.isMaster === true) {
-      this.log(LOG_LEVELS.MASTER, LOG_LEVELS.MASTER, "GO_DEPOSIT");}
+  async achieveDeposit(isEqualToLastIntention) {
+    if (this.isMaster) {
+      this.log(LOG_LEVELS.MASTER, "GO_DEPOSIT");}
     else {
-      this.log(LOG_LEVELS.SLAVE, LOG_LEVELS.SLAVE, "GO_DEPOSIT");
+      this.log(LOG_LEVELS.SLAVE, "GO_DEPOSIT");
     }
 
     // Use helper to move to nearest base
-    if (!isEqualToLastIntention && !getNewPath) {
+    if (!isEqualToLastIntention) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
       this.getPath(base);
 
       this.currentNearestBase = base;
     }
-    else if (getNewPath) {
-      let [base, minDist] = this.mapStore.nearestBase(this.me);
-      this.getNewPath(this.currentNearestBase);
 
-      this.currentNearestBase = base;
-    }
-
-    this.oneStep();
+    this.oneStepCheckAgents(null);
     if (this.me.x === this.currentNearestBase.x && this.me.y === this.currentNearestBase.y) {
       this.isMoving = true;
       this.log(LOG_LEVELS.ACTION, "PUTDOWN");
@@ -297,7 +273,8 @@ export class Agent {
   }
 
   async achieveDropAndGoAway() {
-    let carried_value = this.parcels.carried(this.me.id).reduce((sum, parcel) => sum + parcel.reward, 0);
+    const myParcels = this.parcels.carried(this.me.id);
+    const carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
     
     // 1. Set dropped
     // 2. Putdown parcels
@@ -305,13 +282,13 @@ export class Agent {
 
     this.isMoving = true
 
-    this.communication.setDropped(this.me,carried_value,this.mate.id, this.mapStore);
+    this.communication.setDropped(this.me, carried_value, myParcels.length, this.mate.id, this.mapStore);
     await this.client.emitPutdown(this.parcels, this.me.id);
     await dropAndGoAway(this.client, this.me,this.mate, this.mapStore);
     this.isMoving = false;
   }
 
-  async achieveExplore(isEqualToLastIntention, getNewPath) {
+  async achieveExplore(isEqualToLastIntention) {
 
     if (this.isMaster === true) {
       this.log(LOG_LEVELS.MASTER, "EXPLORE");}
@@ -334,18 +311,13 @@ export class Agent {
     // If spawn is not sparse OR we are not on a green tile
     if (!this.isCamping) {
       
-      if (getNewPath) {
-        let spawnTileCoord = this.mapStore.randomSpawnTile;
-        this.isExploring = true;
-        this.getNewPath(spawnTileCoord);
-      }
-      else if (!isEqualToLastIntention || wasCamping) {
+      if (!isEqualToLastIntention || wasCamping) {
         let spawnTileCoord = this.mapStore.randomSpawnTile;
         this.isExploring = true;
         this.getPath(spawnTileCoord);
       }
 
-      this.oneStep();
+      this.oneStepCheckAgents(null);
       if (this.pathIndex >= this.path.length) {
         this.isExploring = false;
       }
@@ -360,6 +332,67 @@ export class Agent {
       await randomMoveAndBack(this.client, this.me, this.mapStore);
       this.isMoving = false;
     }
+  }
+
+  /**
+   * Performs one step of the agent path, checking if there are collision with other agents
+   * @param {{x : number, y : number}} newPathTile
+   */
+  async oneStepCheckAgents(newPathTile) {
+
+    if (this.pathIndex >= this.path.length) {
+      this.lastIntention = { type: null };
+      return;
+    }
+
+    const visibleAgents = this.agentStore.visible(this.me, this.serverConfig);
+
+    // Check if any agent is in the tile i want to go
+    const nextTile = this.path[this.pathIndex];
+
+    for (let a of visibleAgents) {
+      // If there's an agent in the tile i want to go
+      if (a.x === nextTile.x && a.y === nextTile.y) {
+
+        // Set colliding (only first time)
+        if (!this.isColliding) {
+          this.isColliding = true;
+          this.agentCollisionStartTime = Date.now();
+        }
+
+        // After timer expires -> get new path
+        const secondsElapsed = (Date.now() - this.agentCollisionStartTime) / 1000;
+        if (secondsElapsed > AGENT_TIME) {
+          this.isColliding = false;
+
+          switch (this.lastIntention.type) {
+            case INTENTIONS.GO_PICKUP :
+              break;
+            case INTENTIONS.GO_DEPOSIT :
+              const [base, minDist] = this.mapStore.nearestBase(this.me);
+              this.currentNearestBase = base;
+              newPathTile = base;
+              break;
+            case INTENTIONS.EXPLORE :
+              const spawnTileCoord = this.mapStore.randomSpawnTile;
+              this.isExploring = true;
+              newPathTile = spawnTileCoord;
+              break;
+            default :
+              break;
+          }
+
+          this.getNewPath(newPathTile);
+        }
+
+        return;
+      }
+    }
+
+    this.isColliding = false;
+
+    // If everything is clear -> move
+    await this.oneStep();
   }
 
   /**
@@ -399,7 +432,6 @@ export class Agent {
    */
   getNewPath(target) {
     this.pathIndex = 0;
-    this.penaltyCounter = 0;
 
     let tileMapTemp = new Map();
 
