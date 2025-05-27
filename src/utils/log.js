@@ -1,7 +1,7 @@
 export const LOG_LEVELS = {
-    AGENT:  "Agent",
+    MASTER:  "Master",
+    SLAVE: "Slave",
     ACTION: "Action",
-    AGENT2: "Agent2",
 };
 
 export function log(levelArray, logLevel, ...args) {
