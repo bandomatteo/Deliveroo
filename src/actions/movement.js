@@ -38,7 +38,7 @@ export async function smartMove(client, me, target, mapStore) {
   for (const step of path) {
     const dir = direction(me, step);
     if (!dir) continue;
-    // console.log(`Moving ${dir} from (${me.x},${me.y}) to (${step.x},${step.y})`);
+    
     await moveAndWait(client, me, dir);
   }
 }
@@ -123,18 +123,18 @@ export async function dropAndGoAway(client, me,mate, mapStore) {
     const downCellType = mapStore.map.get(coord2Key(downCell))
 
     if (rightCellType !== TILE_TYPES.EMPTY 
-        && (rightCell.x === mate.x && rightCell.y === mate.y)
-        && (rightCell.x === myPos.x && rightCell.y === myPos.y))
+        && !(rightCell.x === mate.x && rightCell.y === mate.y)
+        && !(rightCell.x === myPos.x && rightCell.y === myPos.y))
       possibleMoves.push(DIRECTIONS.RIGHT);
 
     if (leftCellType !== TILE_TYPES.EMPTY
-        && (leftCell.x === mate.x && leftCell.y === mate.y)
-        && (leftCell.x === myPos.x && leftCell.y === myPos.y))
+        && !(leftCell.x === mate.x && leftCell.y === mate.y)
+        && !(leftCell.x === myPos.x && leftCell.y === myPos.y))
       possibleMoves.push(DIRECTIONS.LEFT);
 
     if (upCellType !== TILE_TYPES.EMPTY
-        && (upCell.x === mate.x && upCell.y === mate.y) 
-        && (upCell.x === myPos.x && upCell.y === myPos.y))
+        && !(upCell.x === mate.x && upCell.y === mate.y) 
+        && !(upCell.x === myPos.x && upCell.y === myPos.y))
       possibleMoves.push(DIRECTIONS.UP);
 
     if (downCellType !== TILE_TYPES.EMPTY
@@ -143,7 +143,7 @@ export async function dropAndGoAway(client, me,mate, mapStore) {
       possibleMoves.push(DIRECTIONS.DOWN);
 
     myPos = { x: me.x, y: me.y }; // Set my position for the next iteration
-
+    
     const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     await client.emitMove(randomDir);
   }

@@ -8,6 +8,7 @@ export class Communication {
     resetDrop() {
         // Drop parcel handling
         this.droppedValue = 0;
+        this.droppedQuantity = 0;
         this.agentToPickup = null;
         /**
          * @type {{x : number, y : number}}
@@ -20,13 +21,15 @@ export class Communication {
      * 
      * @param {{x : number, y : number}} position 
      * @param {number} value 
+     * @param {number} quantity
      * @param {string} agentToPickup 
      * @param {MapStore} mapStore
      */
-    setDropped(position, value, agentToPickup, mapStore) {
+    setDropped(position, value, quantity, agentToPickup, mapStore) {
         this.droppedCoord.x = position.x;
         this.droppedCoord.y = position.y;
         this.droppedValue = value;
+        this.droppedQuantity = quantity;
         this.agentToPickup = agentToPickup;
         //
         let [base, minDist] = mapStore.nearestBase(this.droppedCoord);

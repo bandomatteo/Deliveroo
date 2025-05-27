@@ -78,6 +78,7 @@ export class AgentStore {
     visible(me, config) {
         return Array
             .from(this.map.values())
+            .filter(agent => agent.teamName !== me.teamName)
             .filter(agent => {return distance(agent, me) < config.agents_obs_distance});
     }
 }

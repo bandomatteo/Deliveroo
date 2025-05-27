@@ -7,12 +7,13 @@ import { ServerConfig } from "../models/serverConfig.js";
  * @param {number} carriedValue 
  * @param {number} carriedCount
  * @param {number} reward - Reward of parcels of group of parcels in a tile
+ * @param {number} pickupCount - Number of parcels to pickup
  * @param {number} baseDistance 
  * @param {number} clockPenalty 
  * @param {MapStore} mapStore 
  * @param {ServerConfig} configuration
  */
-export function getPickupScore(startPos, goalPos, carriedValue, carriedCount, reward, baseDistance, clockPenalty, mapStore, configuration) {
+export function getPickupScore(startPos, goalPos, carriedValue, carriedCount, reward, pickupCount, baseDistance, clockPenalty, mapStore, configuration) {
     const distanceToParcel = mapStore.distance(startPos, goalPos);
 
     // Total reward = sum of all carried parcels + this parcel's reward (or group of parcels)
@@ -20,7 +21,7 @@ export function getPickupScore(startPos, goalPos, carriedValue, carriedCount, re
 
     const totalDistance = distanceToParcel + baseDistance;
 
-    const totalParcels = carriedCount + 1;
+    const totalParcels = carriedCount + pickupCount;
 
     // reward potenziale: reward totale - costo temporale del viaggio
     return totalReward - (totalDistance * totalParcels * clockPenalty / configuration.parcels_decaying_interval);
