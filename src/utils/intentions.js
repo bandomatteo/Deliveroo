@@ -1,5 +1,6 @@
 export const INTENTIONS = {
     GO_PICKUP:  "GO_PICKUP",
     GO_DEPOSIT: "GO_DEPOSIT",
-    EXPLORE:    "EXPLORE"
+    EXPLORE:    "EXPLORE",
+    DROP_AND_GO_AWAY: "DROP_AND_GO_AWAY",
   };

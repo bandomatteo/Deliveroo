@@ -2,6 +2,7 @@ import { DIRECTIONS } from "../utils/directions.js";
 import { OpponentAgent } from "./opponentAgent.js";
 import { distance } from "../utils/geometry.js";
 import { Me } from "./me.js";
+import { ServerConfig } from "./serverConfig.js";
 
 /**
  * Manages the agents
@@ -12,11 +13,14 @@ export class AgentStore {
          * @type { Map< string, OpponentAgent > }
          */
         this.map = new Map();
-
-        this.agentObsDistance = 5;  // TODO get this from settings if possible
     }
     
 
+    /**
+     * Add agent to AgentStore
+     * @param {*} a 
+     * @param {number} timestamp 
+     */
     addAgent(a, timestamp) {
         // First time -> creation
         if (!this.map.has(a.id)) {
@@ -29,10 +33,19 @@ export class AgentStore {
         }
     }
 
+    /**
+     * Remove agent from AgentStore
+     * @param {*} a 
+     */
     removeAgent(a) {
         this.map.delete(a.id);
     }
 
+    /**
+     * Update agent values from AgentStore
+     * @param {*} a 
+     * @param {number} timestamp 
+     */
     updateAgent(a, timestamp) {
         let agent = this.map.get(a.id);
 
@@ -43,6 +56,12 @@ export class AgentStore {
         agent.y = a.y;
     }
 
+    /**
+     * Find direction in which the agent is going
+     * @param {{x : number, y : number}} old 
+     * @param {{x : number, y : number}} curr 
+     * @returns direction of the agent
+     */
     findDirection(old, curr) {
         if ( old.x < curr.x ) return DIRECTIONS.RIGHT;
         else if ( old.x > curr.x ) return DIRECTIONS.LEFT;
@@ -53,12 +72,14 @@ export class AgentStore {
 
     /**
      * @param {Me} me 
+     * @param {ServerConfig} config
      * @returns {Array < OpponentAgent >}
      */
-    visible(me) {
+    visible(me, config) {
         return Array
             .from(this.map.values())
-            .filter(agent => {return distance(agent, me) < this.agentObsDistance});
+            .filter(agent => agent.teamName !== me.teamName)
+            .filter(agent => {return distance(agent, me) < config.agents_obs_distance});
     }
 }
   
