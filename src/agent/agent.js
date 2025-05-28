@@ -233,7 +233,7 @@ export class Agent {
 
     // Move towards the parcel and pick up
     if (!isEqualToLastIntention) {
-      this.getPath(p);
+      this.getNewPath(p);
     }
 
     this.oneStepCheckAgents(p);
@@ -258,7 +258,7 @@ export class Agent {
     if (!isEqualToLastIntention) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      this.getPath(base);
+      this.getNewPath(base);
 
       this.currentNearestBase = base;
     }
@@ -314,7 +314,7 @@ export class Agent {
       if (!isEqualToLastIntention || wasCamping) {
         let spawnTileCoord = this.mapStore.randomSpawnTile;
         this.isExploring = true;
-        this.getPath(spawnTileCoord);
+        this.getNewPath(spawnTileCoord);
       }
 
       this.oneStepCheckAgents(null);
