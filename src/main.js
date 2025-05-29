@@ -6,8 +6,8 @@ import { Agent }       from "./agent/agent.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
 import { Communication } from "./models/communication.js";
+import config from './utils/gameConfig.js';
 
-const MAX_TRIES = 5;
 
 async function main() {
   console.log("Creating clients...");
@@ -80,8 +80,8 @@ async function main() {
   });
 
   
-  let firstLoadFlag = true;
 
+  let firstLoadFlag = true;
 
   /**
    * Function that executes only on the first loop of the game, after the agents are ready
@@ -92,8 +92,8 @@ async function main() {
 
     let oneEmpty = true;
 
-    for (let i = 0; oneEmpty && i < MAX_TRIES; i++) {
-      mapStore.kMeans(agent_ids.length, agent_ids, 10, 0.1);
+    for (let i = 0; oneEmpty && i < config.MAX_TRIES_KMEANS; i++) {
+      mapStore.kMeans(agent_ids.length, agent_ids, config.MAX_ITERATIONS_KMEANS, config.ERROR_KMEANS);
 
       oneEmpty = false;
 

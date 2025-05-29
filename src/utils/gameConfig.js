@@ -1,0 +1,28 @@
+// Sparsity
+const MAX_GREEN_CELL_RATIO = 0.2;
+const MAX_SPAWN_RATIO = 3;
+
+// K-means
+const MAX_TRIES_KMEANS = 5;
+const MAX_ITERATIONS_KMEANS = 10;
+const ERROR_KMEANS = 0.1;
+
+// Parcels
+const PARCEL_SURVIVAL_LAMBDA = 0.069;
+
+// Agent
+const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
+const AGENT_TIME = 0;  // camp time for agent collision in Seconds
+
+
+export default 
+{
+    MAX_GREEN_CELL_RATIO, 
+    MAX_SPAWN_RATIO, 
+    MAX_TRIES_KMEANS,
+    MAX_ITERATIONS_KMEANS,
+    ERROR_KMEANS,
+    PARCEL_SURVIVAL_LAMBDA,
+    CAMP_TIME,
+    AGENT_TIME,
+}
