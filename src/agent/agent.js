@@ -14,9 +14,7 @@ import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
 import { Communication } from "../models/communication.js";
 import { getPickupScore } from "../utils/misc.js";
-
-const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
-const AGENT_TIME = 0;  // camp time for agent collision in Seconds
+import config from "../utils/gameConfig.js";
 
 export class Agent {
   /**
@@ -302,7 +300,7 @@ export class Agent {
     const spawnIsSparse = this.mapStore.isSpawnSparse;
 
     if (wasCamping) {
-      this.isCamping = spawnIsSparse && (this.me.frame - this.campingStartFrame < CAMP_TIME);
+      this.isCamping = spawnIsSparse && (this.me.frame - this.campingStartFrame < config.CAMP_TIME);
     }
     else {
       this.isCamping = !this.isExploring && spawnIsSparse && isOnSpawn;
@@ -312,7 +310,7 @@ export class Agent {
     if (!this.isCamping) {
       
       if (!isEqualToLastIntention || wasCamping) {
-        let spawnTileCoord = this.mapStore.randomSpawnTile;
+        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
         this.isExploring = true;
         this.getNewPath(spawnTileCoord);
       }
@@ -362,7 +360,7 @@ export class Agent {
 
         // After timer expires -> get new path
         const secondsElapsed = (Date.now() - this.agentCollisionStartTime) / 1000;
-        if (secondsElapsed > AGENT_TIME) {
+        if (secondsElapsed > config.AGENT_TIME) {
           this.isColliding = false;
 
           switch (this.lastIntention.type) {
@@ -374,7 +372,7 @@ export class Agent {
               newPathTile = base;
               break;
             case INTENTIONS.EXPLORE :
-              const spawnTileCoord = this.mapStore.randomSpawnTile;
+              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
               this.isExploring = true;
               newPathTile = spawnTileCoord;
               break;
@@ -437,7 +435,7 @@ export class Agent {
 
     // Remove tiles with agents
     for (const a of this.agentStore.visible(this.me, this.serverConfig)) {
-      let type = this.mapStore.setType({ x: a.x, y: a.y }, 0);
+      let type = this.mapStore.setType({ x: a.x, y: a.y }, TILE_TYPES.EMPTY);
       tileMapTemp.set(coord2Key(a), type);
     }
 

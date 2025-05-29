@@ -6,6 +6,8 @@ import { Agent }       from "./agent/agent.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
 import { Communication } from "./models/communication.js";
+import config from './utils/gameConfig.js';
+
 
 async function main() {
   console.log("Creating clients...");
@@ -77,21 +79,62 @@ async function main() {
     agents.forEach(a => agentStore.addAgent(a, me2.ms)); 
   });
 
+  
+
+  let firstLoadFlag = true;
+
+  /**
+   * Function that executes only on the first loop of the game, after the agents are ready
+   */
+  function firstLoad() {
+    // Run k-means to split the map between the 2 agents
+    const agent_ids = [me1.id, me2.id];
+
+    let oneEmpty = true;
+
+    for (let i = 0; oneEmpty && i < config.MAX_TRIES_KMEANS; i++) {
+      mapStore.kMeans(agent_ids.length, agent_ids, config.MAX_ITERATIONS_KMEANS, config.ERROR_KMEANS);
+
+      oneEmpty = false;
+
+      for (const el of agent_ids) {
+        const assignedTiles = Array.from(mapStore.spawnTiles.values()).filter(p => p.assignedTo === el);
+
+        // console.log(el, " -> ", assignedTiles);
+        oneEmpty = oneEmpty || assignedTiles.length === 0;
+
+        if (oneEmpty) break;
+      }
+    }
+
+    // If one is empty after MAX_TRIES, reset
+    if (oneEmpty) {
+      mapStore.resetKmeans();
+    }
+  }
+
+
+
   while (true) {
     await new Promise(r => setTimeout(r, serverConfig.clock));
     
     // Debug
     //console.log(`Master: id=${me.id}, isMoving=${agent.isMoving}`);
-   // console.log(`Slave: id=${meSlave.id}, isMoving=${agentSlave.isMoving}`);
+    // console.log(`Slave: id=${meSlave.id}, isMoving=${agentSlave.isMoving}`);
     //console.log(`MapStore size: ${mapStore.mapSize}`);
     
     // Verifica che entrambi siano pronti e la mappa caricata
     const masterReady = me1.id && !agent1.isMoving && mapStore.mapSize > 0;
     const slaveReady = me2.id && !agent2.isMoving && mapStore.mapSize > 0;
     
-    if (!masterReady && !slaveReady) {
+    if (!masterReady || !slaveReady) {
       //console.log("Waiting for agents to be ready...");
       continue;
+    }
+
+    if (firstLoadFlag) {
+      firstLoadFlag = false;
+      firstLoad();
     }
     
     // Fai agire entrambi in parallelo

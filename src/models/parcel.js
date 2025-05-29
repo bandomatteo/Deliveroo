@@ -1,6 +1,7 @@
 import { getPickupScore } from "../utils/misc.js";
 import { MapStore } from "./mapStore.js";
 import { ServerConfig } from "./serverConfig.js";
+import config from "../utils/gameConfig.js"
 
 export class Parcel {
     /**
@@ -51,8 +52,7 @@ export class Parcel {
     */
     calculateSurvivalProbability(currentFrame, agentCount) {
         const seconds = (currentFrame - this.lastSeen) / 20;
-        const lambda = 0.069;
-        this.existingProb = Math.exp(-lambda * seconds * agentCount);    // Con 1 agente -> 50% in 10 sec, con 2 50% in 5 sec, ...
+        this.existingProb = Math.exp(-config.PARCEL_SURVIVAL_LAMBDA * seconds * agentCount);    // Con 1 agente -> 50% in 10 sec, con 2 50% in 5 sec, ...
 
         // console.log("Parcel ", this.id, " - Prob: ", this.existingProb * 100, " %");
     }

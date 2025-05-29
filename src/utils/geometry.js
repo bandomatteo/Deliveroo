@@ -13,6 +13,18 @@ export function distance(a, b) {
 }
 
 /**
+ * Euclidean distance between two points.
+ * @param {{x:number, y:number}} a 
+ * @param {{x:number, y:number}} b 
+ * @returns {number}
+ */
+export function euclidean_distance(a, b) {
+  const dx = Math.pow(a.x - b.x, 2);
+  const dy = Math.pow(a.y - b.y, 2);
+  return Math.sqrt(dx + dy);
+}
+
+/**
  * @param {{x : number, y : number, direction : string}} a
  * @param {{x : number, y : number}} p
  */
