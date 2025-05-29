@@ -87,29 +87,32 @@ async function main() {
    * Function that executes only on the first loop of the game, after the agents are ready
    */
   function firstLoad() {
-    // Run k-means to split the map between the 2 agents
-    const agent_ids = [me1.id, me2.id];
 
-    let oneEmpty = true;
+    if (config.USE_MAP_DIVISION) {
+      // Run k-means to split the map between the 2 agents
+      const agent_ids = [me1.id, me2.id];
 
-    for (let i = 0; oneEmpty && i < config.MAX_TRIES_KMEANS; i++) {
-      mapStore.kMeans(agent_ids.length, agent_ids, config.MAX_ITERATIONS_KMEANS, config.ERROR_KMEANS);
+      let oneEmpty = true;
 
-      oneEmpty = false;
+      for (let i = 0; oneEmpty && i < config.MAX_TRIES_KMEANS; i++) {
+        mapStore.kMeans(agent_ids.length, agent_ids, config.MAX_ITERATIONS_KMEANS, config.ERROR_KMEANS);
 
-      for (const el of agent_ids) {
-        const assignedTiles = Array.from(mapStore.spawnTiles.values()).filter(p => p.assignedTo === el);
+        oneEmpty = false;
 
-        // console.log(el, " -> ", assignedTiles);
-        oneEmpty = oneEmpty || assignedTiles.length === 0;
+        for (const el of agent_ids) {
+          const assignedTiles = Array.from(mapStore.spawnTiles.values()).filter(p => p.assignedTo === el);
 
-        if (oneEmpty) break;
+          // console.log(el, " -> ", assignedTiles);
+          oneEmpty = oneEmpty || assignedTiles.length === 0;
+
+          if (oneEmpty) break;
+        }
       }
-    }
 
-    // If one is empty after MAX_TRIES, reset
-    if (oneEmpty) {
-      mapStore.resetKmeans();
+      // If one is empty after MAX_TRIES, reset
+      if (oneEmpty) {
+        mapStore.resetKmeans();
+      }
     }
   }
 

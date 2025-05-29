@@ -6,6 +6,7 @@ const MAX_SPAWN_RATIO = 3;
 const MAX_TRIES_KMEANS = 5;
 const MAX_ITERATIONS_KMEANS = 10;
 const ERROR_KMEANS = 0.1;
+const USE_MAP_DIVISION = true;
 
 // Parcels
 const PARCEL_SURVIVAL_LAMBDA = 0.069;
@@ -25,4 +26,5 @@ export default
     PARCEL_SURVIVAL_LAMBDA,
     CAMP_TIME,
     AGENT_TIME,
+    USE_MAP_DIVISION,
 }
