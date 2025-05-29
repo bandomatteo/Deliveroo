@@ -312,7 +312,7 @@ export class Agent {
     if (!this.isCamping) {
       
       if (!isEqualToLastIntention || wasCamping) {
-        let spawnTileCoord = this.mapStore.randomSpawnTile;
+        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
         this.isExploring = true;
         this.getNewPath(spawnTileCoord);
       }
@@ -374,7 +374,7 @@ export class Agent {
               newPathTile = base;
               break;
             case INTENTIONS.EXPLORE :
-              const spawnTileCoord = this.mapStore.randomSpawnTile;
+              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
               this.isExploring = true;
               newPathTile = spawnTileCoord;
               break;
@@ -437,7 +437,7 @@ export class Agent {
 
     // Remove tiles with agents
     for (const a of this.agentStore.visible(this.me, this.serverConfig)) {
-      let type = this.mapStore.setType({ x: a.x, y: a.y }, 0);
+      let type = this.mapStore.setType({ x: a.x, y: a.y }, TILE_TYPES.EMPTY);
       tileMapTemp.set(coord2Key(a), type);
     }
 

@@ -1,3 +1,4 @@
+import { euclidean_distance } from "../utils/geometry.js";
 import { coord2Key } from "../utils/hashMap.js";
 import { key2Coord } from "../utils/hashMap.js";
 import { TILE_TYPES } from "../utils/tile.js";
@@ -19,9 +20,9 @@ export class MapStore {
         this.bases = new Set();
 
         /**
-         * @type { Set< string >}
+         * @type { Map< string, {coord: string, assignedTo: string } >}
          */
-        this.spawnTiles = new Set();
+        this.spawnTiles = new Map();
 
         this.mapSize = null;
 
@@ -41,7 +42,7 @@ export class MapStore {
         this.map.set(key, tile.type);
         
         if (tile.type === TILE_TYPES.SPAWN) {
-            this.spawnTiles.add(key);
+            this.spawnTiles.set(key, {coord: key, assignedTo: null});
         }
         else if (tile.type === TILE_TYPES.BASE) {
             this.bases.add(key);
@@ -63,11 +64,16 @@ export class MapStore {
     }
 
     /**
+     * @param {string} agentId
      * @returns {{x : number, y : number}}
      */
-    get randomSpawnTile() {
-        let tileKey = Array.from(this.spawnTiles)[Math.floor(Math.random() * this.spawnTiles.size)];
-        return key2Coord(tileKey);
+    randomSpawnTile(agentId) {
+        let tileArr = Array
+                    .from(this.spawnTiles.values())
+                    .filter(t => t.assignedTo === agentId || t.assignedTo === null);
+        
+        let tile = tileArr[Math.floor(Math.random() * tileArr.length)];
+        return key2Coord(tile.coord);
     }
 
     /**
@@ -190,6 +196,108 @@ export class MapStore {
         
         this.isSpawnSparse = greenCellRatio < 0.2 && spawnRatio < 3;
     }
+
+
+    /**
+     * K-means algorithm to assign tiles to agents
+     * @param {number} k - number of clusters
+     * @param {Array < string >} ids - Array of agent ids of k length
+     * @param {number} max_iterations - Maximum number of iterations
+     * @param {number} stab_error - Stabilization error
+     */
+    kMeans(k, ids, max_iterations, stab_error) {
+        if (ids.length !== k) {
+            throw new Error(`Array length must be ${k}, but got ${ids.length}`)
+        }
+
+        // Create k prototypes with random values
+
+        /**
+         * @type {Array < {x: number, y: number} > }
+         */
+        let prototypes = new Array(k);
+        for (let i = 0; i < k; i++)
+            prototypes[i] = {x : Math.random() * this.mapSize, y : Math.random() * this.mapSize};
+
+        // Array for calculating means
+        /**
+         * @type {Array < {x: number, y: number} > }
+         */
+        let sums = new Array(k);
+
+        let counts = new Array(k);
+
+        let old_prototypes = [];
+        let bound_reached = false;
+
+        // Loop until prototypes are stable
+        for (let iteration_count = 0; !bound_reached && iteration_count < max_iterations; iteration_count++) {
+            
+            old_prototypes = structuredClone(prototypes);
+
+            // Resetting sums and counts
+            for (let i = 0; i < k; i++)
+                sums[i] = {x: 0, y: 0};
+            counts.fill(0);
+
+            // Associate each tile to nearest prototype (with Euclidian distance)
+            for (let tile of this.spawnTiles.values()) {
+                let coords = key2Coord(tile.coord);
+                
+                let min_distance = Infinity;
+                let assigned_prototype_index = -1;
+
+                for (let p = 0; p < k; p++) {
+                    const prot = prototypes[p];
+
+                    const distance = euclidean_distance(coords, prot);
+
+                    if (distance < min_distance) {
+                        min_distance = distance;
+                        assigned_prototype_index = p;
+                    }
+                }
+
+                tile.assignedTo = ids[assigned_prototype_index];
+
+                sums[assigned_prototype_index].x += coords.x;
+                sums[assigned_prototype_index].y += coords.y;
+                counts[assigned_prototype_index]++;
+            }
+
+
+            // Update values of the prototypes to the means of the associated pixels
+            for (let i = 0; i < k; i++) {
+                if (counts[i] !== 0) {
+                    prototypes[i].x = sums[i].x / counts[i];
+                    prototypes[i].y = sums[i].y / counts[i];
+                }
+            }
+
+            // Calculate differences
+            bound_reached = true;
+
+            for (let i = 0; i < k; i++) {
+                const prot = prototypes[i];
+                const old_prot = old_prototypes[i];
+
+                const distance = euclidean_distance(prot, old_prot);
+
+                if (distance > stab_error) {
+                    bound_reached = false;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    resetKmeans() {
+        for (let tile of this.spawnTiles.values()) {
+            tile.assignedTo = null;
+        }
+    }
+
 
     /**
      * Just for debug
