@@ -25,8 +25,8 @@ async function main() {
   const serverConfig = new ServerConfig();
   const communication = new Communication();
 
-  const agent1    = new MultiAgent(client1, me1,me2, parcels, mapStore, agentStore,communication, serverConfig,true);
-  const agent2 = new MultiAgent(client2, me2,me1, parcels, mapStore, agentStore, communication, serverConfig,false);
+  const agent1 = new MultiAgent(client1, me1, me2, parcels, mapStore, agentStore,communication, serverConfig, true);
+  const agent2 = new MultiAgent(client2, me2, me1, parcels, mapStore, agentStore, communication, serverConfig, false);
 
   client1.onYou((payload, time) => {
     //console.log("Master received onYou:", payload);
@@ -127,10 +127,12 @@ async function main() {
     //console.log(`MapStore size: ${mapStore.mapSize}`);
     
     // Verifica che entrambi siano pronti e la mappa caricata
-    const masterReady = me1.id && !agent1.isMoving && mapStore.mapSize > 0;
-    const slaveReady = me2.id && !agent2.isMoving && mapStore.mapSize > 0;
+    const idLoaded = me1.id && me2.id && mapStore.mapSize > 0;
+
+    const masterReady = idLoaded && !agent1.isMoving;
+    const slaveReady = idLoaded && !agent2.isMoving;
     
-    if (!masterReady || !slaveReady) {
+    if (!idLoaded) {
       //console.log("Waiting for agents to be ready...");
       continue;
     }
@@ -143,17 +145,21 @@ async function main() {
     // Fai agire entrambi in parallelo
     const promises = [];
     
-    //console.log("Master is acting...");
-    agent1.updateBeliefs();
-    agent1.generateDesires();
-    agent1.filterIntentions();
-    promises.push(agent1.act());
+    if (masterReady) {
+      //console.log("Master is acting...");
+      agent1.updateBeliefs();
+      agent1.generateDesires();
+      agent1.filterIntentions();
+      promises.push(agent1.act());
+    }
     
-    //console.log("Slave is acting...");
-    agent2.updateBeliefs();
-    agent2.generateDesires();
-    agent2.filterIntentions();
-    promises.push(agent2.act());
+    if (slaveReady) {
+      //console.log("Slave is acting...");
+      agent2.updateBeliefs();
+      agent2.generateDesires();
+      agent2.filterIntentions();
+      promises.push(agent2.act());
+    }
     
     await Promise.all(promises);
     //console.log("Cycle completed");

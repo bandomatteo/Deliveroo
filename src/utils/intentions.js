@@ -3,4 +3,5 @@ export const INTENTIONS = {
     GO_DEPOSIT: "GO_DEPOSIT",
     EXPLORE:    "EXPLORE",
     DROP_AND_GO_AWAY: "DROP_AND_GO_AWAY",
+    GO_AWAY:  "GO_AWAY"
   };
