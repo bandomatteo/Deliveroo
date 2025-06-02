@@ -57,7 +57,7 @@ export class MultiAgent {
     // Explore timers
     this.isExploring = false;
     this.isCamping = false;
-    this.campingStartFrame = 0;
+    this.campingStartTime = 0;
 
     // Agent collision timers
     this.isColliding = false;
@@ -104,14 +104,40 @@ export class MultiAgent {
     const roundedMe = {x : Math.round(this.me.x), y : Math.round(this.me.y)};
     const roundedMate = {x : Math.round(this.mate.x), y : Math.round(this.mate.y)};
 
+    //If we have a mate close to us, drop carried parcels
+    if (this.mapStore.distance(roundedMe, roundedMate) <= 1 && carried_count > 0) {
+      let [base, minDist] = this.mapStore.nearestBase(this.me);
+      let [baseMate, minDistMate] = this.mapStore.nearestBase(this.mate);
+      
+      if (minDist > minDistMate) {
+        this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
+        return;
+      }
+    }
+    
+    // Move away if other agent is stuck
+    if (this.communication.moveAwayAgentId === this.me.id) {
+      this.desires.push({ type: INTENTIONS.GO_AWAY, score: +Infinity});
+      return;
+    }
+    
     // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
 
-      p.calculatePotentialPickUpReward(roundedMe, this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
-      p.calculatePotentialPickUpReward(roundedMate, !this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
+      let pickUpScoreMaster = -1;
+      let pickUpScoreSlave = -1;
 
-      let pickUpScoreMaster = p.potentialPickUpReward;
-      let pickUpScoreSlave = p.potentialPickUpRewardSlave;
+      // If is the parcel dropped, do not consider (score is -1)
+      if (p.x !== this.communication.droppedCoord.x || p.y !== this.communication.droppedCoord.y 
+          || this.communication.agentToPickup === this.me.id
+          || (p.x === this.me.x && p.y === this.me.y)) {
+        
+        p.calculatePotentialPickUpReward(roundedMe, this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
+        p.calculatePotentialPickUpReward(roundedMate, !this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
+      
+        pickUpScoreMaster = p.potentialPickUpReward;
+        pickUpScoreSlave = p.potentialPickUpRewardSlave;
+      }
 
       if (this.isMaster === true) {
         if (pickUpScoreMaster >= pickUpScoreSlave) {
@@ -134,20 +160,6 @@ export class MultiAgent {
       this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: this.communication.droppedCoord, score: dropPickupReward, isFromDropped : true });
     }
 
-    //If we have a mate close to us, drop carried parcels
-    if (this.mapStore.distance(roundedMe, roundedMate) <= 1 && carried_count > 0) {
-      let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let [baseMate, minDistMate] = this.mapStore.nearestBase(this.mate);
-
-      if (minDist > minDistMate) {
-        this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
-      }
-    }
-
-    // Move away if other agent is stuck
-    if (this.communication.moveAwayAgentId === this.me.id) {
-      this.desires.push({ type: INTENTIONS.GO_AWAY, score: +Infinity});
-    }
 
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
@@ -157,7 +169,7 @@ export class MultiAgent {
       this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
     }
 
-    // Explore come fallback
+    // Explore
     this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
 
@@ -288,6 +300,7 @@ export class MultiAgent {
       
       // Tell the other agent to move away
       this.communication.moveAwayAgentId = this.mate.id;
+      return;
     }
 
     // 1. Set dropped
@@ -310,9 +323,9 @@ export class MultiAgent {
   }
 
   async achieveExplore(isEqualToLastIntention) {
-
     if (this.isMaster === true) {
-      this.log(LOG_LEVELS.MASTER, "EXPLORE");}
+      this.log(LOG_LEVELS.MASTER, "EXPLORE");
+    }
     else {
       this.log(LOG_LEVELS.SLAVE, "EXPLORE");
     }
@@ -323,7 +336,8 @@ export class MultiAgent {
     const spawnIsSparse = this.mapStore.isSpawnSparse;
 
     if (wasCamping) {
-      this.isCamping = spawnIsSparse && (this.me.frame - this.campingStartFrame < config.CAMP_TIME);
+      const secondsElapsed = (Date.now() - this.campingStartTime) / 1000;
+      this.isCamping = spawnIsSparse && (secondsElapsed < config.CAMP_TIME);
     }
     else {
       this.isCamping = !this.isExploring && spawnIsSparse && isOnSpawn;
@@ -343,15 +357,9 @@ export class MultiAgent {
         this.isExploring = false;
       }
     }
-    // Camping behaviour
-    else {
-      if (!wasCamping) {
-        this.campingStartFrame = this.me.frame;
-      }
-
-      this.isMoving = true;
-      await randomMoveAndBack(this.client, this.me, this.mapStore);
-      this.isMoving = false;
+    // Camping behaviour --> save time but do nothing
+    else if (!wasCamping) {
+      this.campingStartTime = Date.now();
     }
   }
 

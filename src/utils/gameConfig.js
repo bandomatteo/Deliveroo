@@ -12,7 +12,7 @@ const USE_MAP_DIVISION = true;
 const PARCEL_SURVIVAL_LAMBDA = 0.069;
 
 // Agent
-const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
+const CAMP_TIME = 3; // camp time in Seconds
 const AGENT_TIME = 0;  // camp time for agent collision in Seconds
 const GO_AWAY_MOVES = 3;
 
