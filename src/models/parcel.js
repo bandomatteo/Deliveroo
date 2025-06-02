@@ -42,7 +42,10 @@ export class Parcel {
         let [base, minDist] = mapStore.nearestBase(this);
 
         this.baseDistance = minDist;
-        this.nearestBase = { x: base.x, y: base.y };
+
+        if (base) {
+            this.nearestBase = { x: base.x, y: base.y };
+        }
     }
 
     /**

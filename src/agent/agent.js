@@ -65,8 +65,8 @@ export class Agent {
 
     // Log section
     this.logLevels = [];
-    this.logLevels.push(LOG_LEVELS.MASTER);
-    this.logLevels.push(LOG_LEVELS.SLAVE);
+    // this.logLevels.push(LOG_LEVELS.MASTER);
+    // this.logLevels.push(LOG_LEVELS.SLAVE);
     // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
@@ -256,7 +256,7 @@ export class Agent {
     if (!isEqualToLastIntention) {
 
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      this.getNewPath(base);
+      this.getBasePath(base);
 
       this.currentNearestBase = base;
     }
@@ -380,7 +380,12 @@ export class Agent {
               break;
           }
 
-          this.getNewPath(newPathTile);
+          if (this.lastIntention.type === INTENTIONS.GO_DEPOSIT) {
+            this.getBasePath(newPathTile);
+          }
+          else {
+            this.getNewPath(newPathTile);
+          }
         }
 
         return;
@@ -435,7 +440,7 @@ export class Agent {
 
     // Remove tiles with agents
     for (const a of this.agentStore.visible(this.me, this.serverConfig)) {
-      let type = this.mapStore.setType({ x: a.x, y: a.y }, TILE_TYPES.EMPTY);
+      let type = this.mapStore.setType(a, TILE_TYPES.EMPTY);
       tileMapTemp.set(coord2Key(a), type);
     }
 
@@ -446,5 +451,48 @@ export class Agent {
       let tile = key2Coord(key);
       this.mapStore.setType(tile, value);
     }
+  }
+
+  /**
+   * Get A* path to base, removing visible agents
+   * @param {{x : number, y : number}} target 
+   */
+  getBasePath(target) {
+    let tries = 0;
+
+    do {
+      // Check if #tries expired
+      if (tries % config.BASE_TRIES === 0 && tries > 0) {
+        
+        // Delete base from map
+        this.mapStore.setType(target, TILE_TYPES.EMPTY);
+
+        // Re-add seconds later
+        const restoreTarget = { x: target.x, y: target.y };  // snapshot
+        setTimeout(() => {
+          this.mapStore.setType(restoreTarget, TILE_TYPES.BASE);
+        }, config.BASE_REMOVAL_TIME);
+
+        // Find new target
+        const [base, minDist] = this.mapStore.nearestBase(this.me);
+
+        if (base === null || base === undefined) {
+          return;
+        }
+
+        this.currentNearestBase = base;
+
+        target = base;
+      }
+
+      if (this.me.x === target.x && this.me.y === target.y)
+        return;
+
+      // Check if it exists a path to the nearest base (without the one removed from the map)
+      this.getNewPath(target);
+
+      tries++;
+
+    } while (this.path.length === 0 && tries < config.BASE_SWITCH_MAX_TRIES);
   }
 }

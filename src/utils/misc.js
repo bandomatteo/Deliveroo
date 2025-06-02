@@ -14,6 +14,10 @@ import { ServerConfig } from "../models/serverConfig.js";
  * @param {ServerConfig} configuration
  */
 export function getPickupScore(startPos, goalPos, carriedValue, carriedCount, reward, pickupCount, baseDistance, clockPenalty, mapStore, configuration) {
+    if (baseDistance === null || baseDistance === undefined) {
+        baseDistance = 0;
+    }
+    
     const distanceToParcel = mapStore.distance(startPos, goalPos);
 
     // Total reward = sum of all carried parcels + this parcel's reward (or group of parcels)
