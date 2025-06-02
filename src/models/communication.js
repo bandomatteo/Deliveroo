@@ -3,6 +3,8 @@ import { MapStore } from "./mapStore.js";
 export class Communication {
     constructor() {
         this.resetDrop();
+
+        this.moveAwayAgentId = null;
     }
 
     resetDrop() {

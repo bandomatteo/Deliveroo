@@ -4,7 +4,8 @@ import { Me } from "../models/me.js";
 import { astarSearch, direction } from "../utils/astar.js";
 import { DIRECTIONS, oppositeDirection } from "../utils/directions.js";
 import { coord2Key } from "../utils/hashMap.js";
-import { TILE_TYPES } from "../utils/tile.js";
+import { isWalkableTile, TILE_TYPES } from "../utils/tile.js";
+import gameConfig from "../utils/gameConfig.js";
 
 /**
  * Ensures movement command is only sent after previous is complete.
@@ -84,13 +85,13 @@ export async function randomMoveAndBack(client, me, mapStore) {
   const upCell = mapStore.map.get(coord2Key({x : me.x, y : me.y + 1}))
   const downCell = mapStore.map.get(coord2Key({x : me.x, y : me.y - 1}))
 
-  if (rightCell !== TILE_TYPES.EMPTY)
+  if (isWalkableTile(rightCell))
     possibleMoves.push(DIRECTIONS.RIGHT);
-  if (leftCell !== TILE_TYPES.EMPTY)
+  if (isWalkableTile(leftCell))
     possibleMoves.push(DIRECTIONS.LEFT);
-  if (upCell !== TILE_TYPES.EMPTY)
+  if (isWalkableTile(upCell))
     possibleMoves.push(DIRECTIONS.UP);
-  if (downCell !== TILE_TYPES.EMPTY)
+  if (isWalkableTile(downCell))
     possibleMoves.push(DIRECTIONS.DOWN);
   
   const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
@@ -100,52 +101,67 @@ export async function randomMoveAndBack(client, me, mapStore) {
   await client.emitMove(secondDir);
 }
 
+
+/**
+ * @param {MapStore} mapStore
+ * @param {Me} me
+ * @param {Me} mate
+ * @param {{x : number, y : number}} myPos
+ */
+export function getNearTiles(mapStore, me, mate, myPos) {
+  let possibleMoves = [];
+
+  const rightCell = { x: me.x + 1, y: me.y }
+  const leftCell = { x: me.x - 1, y: me.y }
+  const upCell = { x: me.x, y: me.y + 1 }
+  const downCell = { x: me.x, y: me.y - 1 }
+
+  const rightCellType = mapStore.map.get(coord2Key(rightCell))
+  const leftCellType = mapStore.map.get(coord2Key(leftCell))
+  const upCellType = mapStore.map.get(coord2Key(upCell))
+  const downCellType = mapStore.map.get(coord2Key(downCell))
+
+  if (isWalkableTile(rightCellType)
+      && !(rightCell.x === mate.x && rightCell.y === mate.y)
+      && !(rightCell.x === myPos.x && rightCell.y === myPos.y))
+    possibleMoves.push(DIRECTIONS.RIGHT);
+
+  if (isWalkableTile(leftCellType)
+      && !(leftCell.x === mate.x && leftCell.y === mate.y)
+      && !(leftCell.x === myPos.x && leftCell.y === myPos.y))
+    possibleMoves.push(DIRECTIONS.LEFT);
+
+  if (isWalkableTile(upCellType)
+      && !(upCell.x === mate.x && upCell.y === mate.y) 
+      && !(upCell.x === myPos.x && upCell.y === myPos.y))
+    possibleMoves.push(DIRECTIONS.UP);
+
+  if (isWalkableTile(downCellType)
+      && !(downCell.x === mate.x && downCell.y === mate.y)
+      && !(downCell.x === myPos.x && downCell.y === myPos.y))
+    possibleMoves.push(DIRECTIONS.DOWN);
+
+  return possibleMoves;
+}
+
 /**
  * @param {DeliverooClient} client
  * @param {Me} me
+ * @param {Me} mate
  * @param {MapStore} mapStore
  */
-export async function dropAndGoAway(client, me,mate, mapStore) {
-  let possibleMoves = [];
+export async function goAway(client, me, mate, mapStore) {
   let myPos = {x : undefined, y : undefined};
 
-  for (let i = 0; i < 3; i++) {
-    possibleMoves = [];
+  for (let i = 0; i < gameConfig.GO_AWAY_MOVES; i++) {
+    let possibleMoves = getNearTiles(mapStore, me, mate, myPos);
 
-    const rightCell = { x: me.x + 1, y: me.y }
-    const leftCell = { x: me.x - 1, y: me.y }
-    const upCell = { x: me.x, y: me.y + 1 }
-    const downCell = { x: me.x, y: me.y - 1 }
-
-    const rightCellType = mapStore.map.get(coord2Key(rightCell))
-    const leftCellType = mapStore.map.get(coord2Key(leftCell))
-    const upCellType = mapStore.map.get(coord2Key(upCell))
-    const downCellType = mapStore.map.get(coord2Key(downCell))
-
-    if (rightCellType !== TILE_TYPES.EMPTY 
-        && !(rightCell.x === mate.x && rightCell.y === mate.y)
-        && !(rightCell.x === myPos.x && rightCell.y === myPos.y))
-      possibleMoves.push(DIRECTIONS.RIGHT);
-
-    if (leftCellType !== TILE_TYPES.EMPTY
-        && !(leftCell.x === mate.x && leftCell.y === mate.y)
-        && !(leftCell.x === myPos.x && leftCell.y === myPos.y))
-      possibleMoves.push(DIRECTIONS.LEFT);
-
-    if (upCellType !== TILE_TYPES.EMPTY
-        && !(upCell.x === mate.x && upCell.y === mate.y) 
-        && !(upCell.x === myPos.x && upCell.y === myPos.y))
-      possibleMoves.push(DIRECTIONS.UP);
-
-    if (downCellType !== TILE_TYPES.EMPTY
-        && !(downCell.x === mate.x && downCell.y === mate.y)
-        && !(downCell.x === myPos.x && downCell.y === myPos.y))
-      possibleMoves.push(DIRECTIONS.DOWN);
-
-    myPos = { x: me.x, y: me.y }; // Set my position for the next iteration
-    
     const randomDir = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-    await client.emitMove(randomDir);
+    
+    if (randomDir) {
+      myPos = { x: me.x, y: me.y }; // Set my position for the next iteration
+      await client.emitMove(randomDir);
+    }
   }
 }
 

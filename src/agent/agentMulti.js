@@ -1,4 +1,4 @@
-import { moveAndWait, randomMoveAndBack, dropAndGoAway } from "../actions/movement.js";
+import { moveAndWait, randomMoveAndBack, goAway, getNearTiles } from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
@@ -144,6 +144,11 @@ export class MultiAgent {
       }
     }
 
+    // Move away if other agent is stuck
+    if (this.communication.moveAwayAgentId === this.me.id) {
+      this.desires.push({ type: INTENTIONS.GO_AWAY, score: +Infinity});
+    }
+
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
@@ -210,6 +215,9 @@ export class MultiAgent {
         case INTENTIONS.DROP_AND_GO_AWAY:
           this.lastIntention = intention;
           return this.achieveDropAndGoAway();
+        case INTENTIONS.GO_AWAY:
+          this.lastIntention = intention;
+          return this.achieveGoAway();
         case INTENTIONS.EXPLORE:
           this.lastIntention = intention;
           return this.achieveExplore(isEqualToLastIntention);
@@ -274,16 +282,31 @@ export class MultiAgent {
     const myParcels = this.parcels.carried(this.me.id);
     const carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
     
+    // Check if there's a possibility to move
+    const possibleMoves = getNearTiles(this.mapStore, this.me, this.mate, {x : undefined, y : undefined});
+    if (possibleMoves.length === 0) {
+      
+      // Tell the other agent to move away
+      this.communication.moveAwayAgentId = this.mate.id;
+    }
+
     // 1. Set dropped
     // 2. Putdown parcels
     // 3. Go away
 
-    this.isMoving = true
+    this.isMoving = true;
 
     this.communication.setDropped(this.me, carried_value, myParcels.length, this.mate.id, this.mapStore);
     await this.client.emitPutdown(this.parcels, this.me.id);
-    await dropAndGoAway(this.client, this.me,this.mate, this.mapStore);
+    await goAway(this.client, this.me, this.mate, this.mapStore);
     this.isMoving = false;
+  }
+
+  async achieveGoAway() {
+    this.isMoving = true;
+    await goAway(this.client, this.me, this.mate, this.mapStore);
+    this.isMoving = false;
+    this.communication.moveAwayAgentId = null;
   }
 
   async achieveExplore(isEqualToLastIntention) {
