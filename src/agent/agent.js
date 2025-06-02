@@ -49,7 +49,7 @@ export class Agent {
     // Explore timers
     this.isExploring = false;
     this.isCamping = false;
-    this.campingStartFrame = 0;
+    this.campingStartTime = 0;
 
     // Agent collision timers
     this.isColliding = false;
@@ -225,7 +225,8 @@ export class Agent {
     const spawnIsSparse = this.mapStore.isSpawnSparse;
 
     if (wasCamping) {
-      this.isCamping = spawnIsSparse && (this.me.frame - this.campingStartFrame < config.CAMP_TIME);
+      const secondsElapsed = (Date.now() - this.campingStartTime) / 1000;
+      this.isCamping = spawnIsSparse && (secondsElapsed < config.CAMP_TIME);
     }
     else {
       this.isCamping = !this.isExploring && spawnIsSparse && isOnSpawn;
@@ -248,7 +249,7 @@ export class Agent {
     // Camping behaviour
     else {
       if (!wasCamping) {
-        this.campingStartFrame = this.me.frame;
+        this.campingStartFrame = Date.now();
       }
 
       this.isMoving = true;
