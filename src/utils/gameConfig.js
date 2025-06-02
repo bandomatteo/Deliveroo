@@ -15,6 +15,11 @@ const PARCEL_SURVIVAL_LAMBDA = 0.069;
 const CAMP_TIME = 3 * 20; // camp time in Frames (this is 3 seconds)
 const AGENT_TIME = 0;  // camp time for agent collision in Seconds
 
+// Second best base
+const BASE_TRIES = 10;   // Number of tries to pick the same base (should be 20 per second)
+const BASE_SWITCH_MAX_TRIES = 60;   // Should be 20 per second  (one per frame if agent isn't moving)
+const BASE_REMOVAL_TIME = 3000;    // Time which the occupied bases get removed from the map, in Milliseconds
+
 
 export default 
 {
@@ -27,4 +32,7 @@ export default
     CAMP_TIME,
     AGENT_TIME,
     USE_MAP_DIVISION,
+    BASE_TRIES,
+    BASE_REMOVAL_TIME,
+    BASE_SWITCH_MAX_TRIES
 }

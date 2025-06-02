@@ -21,7 +21,7 @@ export class MapStore {
         this.bases = new Set();
 
         /**
-         * @type { Map< string, {coord: string, assignedTo: string } >}
+         * @type { Map< string, {coord: string, assignedTo: string, available : boolean } >}
          */
         this.spawnTiles = new Map();
 
@@ -43,7 +43,7 @@ export class MapStore {
         this.map.set(key, tile.type);
         
         if (tile.type === TILE_TYPES.SPAWN) {
-            this.spawnTiles.set(key, {coord: key, assignedTo: null});
+            this.spawnTiles.set(key, {coord: key, assignedTo: null, available : true});
         }
         else if (tile.type === TILE_TYPES.BASE) {
             this.bases.add(key);
@@ -60,7 +60,24 @@ export class MapStore {
     setType(tile, type) {
         let key = coord2Key(tile);
         let oldType = this.map.get(key);
+
+        if (oldType === TILE_TYPES.SPAWN) {
+            this.spawnTiles.get(key).available = false;
+        }
+        else if (oldType === TILE_TYPES.BASE) {
+            this.bases.delete(key);
+        }
+
         this.map.set(key, type);
+
+        if (type === TILE_TYPES.SPAWN) {
+            this.spawnTiles.get(key).available = true;
+        }
+        else if (type === TILE_TYPES.BASE) {
+            this.bases.add(key);
+        }
+
+
         return oldType;
     }
 
@@ -71,6 +88,7 @@ export class MapStore {
     randomSpawnTile(agentId) {
         let tileArr = Array
                     .from(this.spawnTiles.values())
+                    .filter(t => t.available)
                     .filter(t => t.assignedTo === agentId || t.assignedTo === null);
         
         let tile = tileArr[Math.floor(Math.random() * tileArr.length)];
