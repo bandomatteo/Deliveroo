@@ -21,6 +21,12 @@ const BASE_TRIES = 10;   // Number of tries to pick the same base (should be 20 
 const BASE_SWITCH_MAX_TRIES = 60;   // Should be 20 per second  (one per frame if agent isn't moving)
 const BASE_REMOVAL_TIME = 3000;    // Time which the occupied bases get removed from the map, in Milliseconds
 
+// Options Infitity scores (to sort them)
+const DEPOSIT_INSTANTLY = Number.MAX_SAFE_INTEGER;
+const FREE_MATE = Number.MAX_SAFE_INTEGER - 1;
+const EXCHANGE_PARCELS = Number.MAX_SAFE_INTEGER - 2;
+const PICKUP_NEAR_PARCEL = Number.MAX_SAFE_INTEGER - 3;
+
 
 export default 
 {
@@ -36,5 +42,9 @@ export default
     BASE_TRIES,
     BASE_REMOVAL_TIME,
     BASE_SWITCH_MAX_TRIES,
-    GO_AWAY_MOVES
+    GO_AWAY_MOVES,
+    FREE_MATE,
+    EXCHANGE_PARCELS,
+    DEPOSIT_INSTANTLY,
+    PICKUP_NEAR_PARCEL
 }

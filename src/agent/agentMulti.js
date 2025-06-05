@@ -15,6 +15,7 @@ import { ServerConfig } from "../models/serverConfig.js";
 import { Communication } from "../models/communication.js";
 import { getPickupScore } from "../utils/misc.js";
 import config from "../utils/gameConfig.js";
+import gameConfig from "../utils/gameConfig.js";
 
 export class MultiAgent {
   /**
@@ -110,14 +111,14 @@ export class MultiAgent {
       let [baseMate, minDistMate] = this.mapStore.nearestBase(this.mate);
       
       if (minDist > minDistMate) {
-        this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: +Infinity });
+        this.desires.push({ type: INTENTIONS.DROP_AND_GO_AWAY, score: gameConfig.EXCHANGE_PARCELS });
         return;
       }
     }
     
     // Move away if other agent is stuck
     if (this.communication.moveAwayAgentId === this.me.id) {
-      this.desires.push({ type: INTENTIONS.GO_AWAY, score: +Infinity});
+      this.desires.push({ type: INTENTIONS.GO_AWAY, score: gameConfig.FREE_MATE });
       return;
     }
     
@@ -131,6 +132,14 @@ export class MultiAgent {
       if (p.x !== this.communication.droppedCoord.x || p.y !== this.communication.droppedCoord.y 
           || this.communication.agentToPickup === this.me.id
           || (p.x === this.me.x && p.y === this.me.y)) {
+
+        // Calculate distance
+        const distanceToParcel = this.mapStore.distance(roundedMe, p);
+        // If parcel is below us, pickup (might see some other parcel that is more valuable and leave that on the ground)
+        if (distanceToParcel === 0) {
+          this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: gameConfig.PICKUP_NEAR_PARCEL });
+          continue;
+        }
         
         p.calculatePotentialPickUpReward(roundedMe, this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
         p.calculatePotentialPickUpReward(roundedMate, !this.isMaster, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
@@ -164,9 +173,16 @@ export class MultiAgent {
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let deposit_score = carried_value - minDist * carried_count * clockPenalty / this.serverConfig.parcels_decaying_interval;
 
-      this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
+      // If we are on a base, drop instantly (might see some other parcel that is more valuable and not drop the parcels)
+      if (minDist === 0) {
+        this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: gameConfig.DEPOSIT_INSTANTLY });
+      }
+      else {
+        let deposit_score = carried_value - minDist * carried_count * clockPenalty / this.serverConfig.parcels_decaying_interval;
+
+        this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
+      }
     }
 
     // Explore
@@ -347,7 +363,7 @@ export class MultiAgent {
     if (!this.isCamping) {
       
       if (!isEqualToLastIntention || wasCamping) {
-        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
+        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me);
         this.isExploring = true;
         this.getNewPath(spawnTileCoord);
       }
@@ -403,7 +419,7 @@ export class MultiAgent {
               newPathTile = base;
               break;
             case INTENTIONS.EXPLORE :
-              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
+              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me);
               this.isExploring = true;
               newPathTile = spawnTileCoord;
               break;
