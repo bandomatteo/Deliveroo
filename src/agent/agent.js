@@ -13,6 +13,8 @@ import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
 import config from "../utils/gameConfig.js";
+import { ioTypedSocket } from "@unitn-asa/deliveroo-js-client";
+import gameConfig from "../utils/gameConfig.js";
 
 export class Agent {
   /**
@@ -96,6 +98,14 @@ export class Agent {
 
     // For all parcels available, calculate potential reward
     for (const p of this.parcels.available) {
+      
+      // Calculate distance
+      const distanceToParcel = this.mapStore.distance(roundedMe, p);
+      // If parcel is below us, pickup (might see some other parcel that is more valuable and leave that on the ground)
+      if (distanceToParcel === 0) {
+        this.desires.push({ type: INTENTIONS.GO_PICKUP, parcel: p, score: gameConfig.PICKUP_NEAR_PARCEL });
+        continue;
+      }
 
       p.calculatePotentialPickUpReward(roundedMe, true, carried_value, carried_count, this.mapStore, clockPenalty, this.serverConfig);
       
@@ -107,9 +117,16 @@ export class Agent {
     //If we have parcels, consider deposit option
     if (carried_count > 0) {
       let [base, minDist] = this.mapStore.nearestBase(this.me);
-      let deposit_score = carried_value - minDist * carried_count * clockPenalty / this.serverConfig.parcels_decaying_interval;
 
-      this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
+      // If we are on a base, drop instantly (might see some other parcel that is more valuable and not drop the parcels)
+      if (minDist === 0) {
+        this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: gameConfig.DEPOSIT_INSTANTLY });
+      }
+      else {
+        let deposit_score = carried_value - minDist * carried_count * clockPenalty / this.serverConfig.parcels_decaying_interval;
+  
+        this.desires.push({ type: INTENTIONS.GO_DEPOSIT, score: deposit_score });
+      }
     }
 
     // Explore come fallback
@@ -236,7 +253,7 @@ export class Agent {
     if (!this.isCamping) {
       
       if (!isEqualToLastIntention || wasCamping) {
-        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
+        let spawnTileCoord = this.mapStore.randomSpawnTile(this.me);
         this.isExploring = true;
         this.getNewPath(spawnTileCoord);
       }
@@ -298,7 +315,7 @@ export class Agent {
               newPathTile = base;
               break;
             case INTENTIONS.EXPLORE :
-              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me.id);
+              const spawnTileCoord = this.mapStore.randomSpawnTile(this.me);
               this.isExploring = true;
               newPathTile = spawnTileCoord;
               break;

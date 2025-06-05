@@ -3,6 +3,7 @@ import { coord2Key } from "../utils/hashMap.js";
 import { key2Coord } from "../utils/hashMap.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "./serverConfig.js";
+import { Me } from "./me.js";
 import config from '../utils/gameConfig.js';
 
 /**
@@ -82,14 +83,15 @@ export class MapStore {
     }
 
     /**
-     * @param {string} agentId
+     * @param {Me} me
      * @returns {{x : number, y : number}}
      */
-    randomSpawnTile(agentId) {
+    randomSpawnTile(me) {
         let tileArr = Array
                     .from(this.spawnTiles.values())
+                    .filter(t => isFinite(this.distance(me, key2Coord(t.coord))))
                     .filter(t => t.available)
-                    .filter(t => t.assignedTo === agentId || t.assignedTo === null);
+                    .filter(t => t.assignedTo === me.id || t.assignedTo === null);
         
         let tile = tileArr[Math.floor(Math.random() * tileArr.length)];
         return key2Coord(tile.coord);
