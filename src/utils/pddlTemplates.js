@@ -138,8 +138,7 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
 
    // get all walkable tiles (type != EMPTY)
   const walkableTiles = [];
-  // mapStore.map.entries() returns an iterator of [key, value] pairs
-  // where coordinates is a string like "3,5" and value is a TILE_TYPE
+  // mapStore.map.entries() returns an iterator of [key, value] pairs where coordinates is a string like "3,5" and value is a TILE_TYPE
   for (const [coordinates, tileType] of mapStore.map.entries()) {
     //FIXME: mettendo isWalkableTile(tileType) non va :/
     console.log(`Tile at ${coordinates} is of type ${tileType}`);

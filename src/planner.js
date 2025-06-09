@@ -14,15 +14,16 @@ function buildExecutor(onMove, onPickup, onDeposit) {
   // Signature: executor(agent, fromTile, toTile) <--- like in the PDDL domain
   executor.addAction({
     name: "MOVE",  //we used move in the ppddl domain, but it wants MOVE here :/
+    // 3 params cuz the PDDL domain has 3 params
     executor: (agent, fromTile, toTile) => {
       // Example values:
       // agent    = "AGENT_0D4EA4"
       // fromTile = "T_4_4"
       // toTile   = "T_5_4"
 
-      // Extract numeric x/y from the destination tile string "T_5_4"
+      // extract numeric x/y from the destination tile string "T_5_4"
       const [_, sx, sy] = toTile.split("_").map((v) => Number(v));
-      // Call the onMove callback with the target coordinates
+    
       return onMove(sx, sy); // must return a Promise
     },
   });
@@ -31,6 +32,7 @@ function buildExecutor(onMove, onPickup, onDeposit) {
   // Signature: executor(agent, parcel, atTile)
   executor.addAction({
     name: "PICKUP",
+    // 3 params cuz the PDDL domain has 3 params
     executor: (agent, parcel, atTile) => {
       // Example values:
       // agent  = "AGENT_0D4EA4"
@@ -46,6 +48,7 @@ function buildExecutor(onMove, onPickup, onDeposit) {
   // Signature: executor(agent, parcel, base, atTile)
   executor.addAction({
     name: "DEPOSIT",
+    // 4 params cuz the PDDL domain has 3 params
     executor: (agent, parcel, base, atTile) => {
       // Example values:
       // agent  = "AGENT_0D4EA4"
@@ -78,7 +81,7 @@ export async function executePlan(rawPlan, onMove, onPickup, onDeposit) {
     return;
   }
 
-  // Build the PddlExecutor with the three handlers
+  // build the PddlExecutor with the three handlers
   const pddlExecutor = buildExecutor(onMove, onPickup, onDeposit);
 
   try {
