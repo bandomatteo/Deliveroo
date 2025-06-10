@@ -125,9 +125,26 @@ async function main() {
     }
   });
 
-  client.onAgentsSensing((agents) => {
+  /*client.onAgentsSensing((agents) => {
     agents.forEach((a) => agentStore.addAgent(a, me.ms));
-  });
+  });*/
+
+  //FIXME : Serve a rimuovere le persone dalla mappa
+  /*
+  client.onAgentsSensing((agents) => {
+    
+    agents.forEach((a) => {
+        agentStore.addAgent(a, me.ms);
+        if (a.id !== me.id) {
+            mapStore.addTile({ x: a.x, y: a.y, type: 0 }); // Imposta il tipo a 0
+            console.log(`Agent ${a.id} detected at ${a.x},${a.y}. Marking as blocked.`);
+        }
+    });
+
+   
+  });
+
+  */
 
   // Wait until we know our id and the map is fully loaded
   while (!me.id || mapStore.mapSize === 0) {
@@ -182,6 +199,8 @@ async function main() {
       console.error("Error executing plan:", err);
     } finally {
       isExecutingPlan = false;
+      //FIXME
+      //await moveAndWait(client,me,"up");
     }
   }
 }
