@@ -1,6 +1,6 @@
 // src/utils/pddlTemplates.js
 
-import { TILE_TYPES } from "../utils/tile.js"; 
+import { isWalkableTile, TILE_TYPES } from "../utils/tile.js"; 
 
 /**
  * Replace any non‐alphanumeric character with an underscore,
@@ -139,10 +139,13 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
    // get all walkable tiles (type != EMPTY)
   const walkableTiles = [];
   // mapStore.map.entries() returns an iterator of [key, value] pairs where coordinates is a string like "3,5" and value is a TILE_TYPE
+
   for (const [coordinates, tileType] of mapStore.map.entries()) {
-    //FIXME: mettendo isWalkableTile(tileType) non va :/
+    
     //console.log(`Tile at ${coordinates} is of type ${tileType}`);
-    if (tileType !== TILE_TYPES.EMPTY) {
+    
+    //tileType !== TILE_TYPES.EMPTY
+    if (isWalkableTile(tileType)) {
       const [x, y] = coordinates.split(",").map(Number);
       //console.log(`Adding walkable tile: ${coordKey} (${xs}, ${ys})`);
       walkableTiles.push({ coordinates: coordinates, x: x, y: y });

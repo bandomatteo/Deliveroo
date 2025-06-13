@@ -48,7 +48,7 @@ function buildExecutor(onMove, onPickup, onDeposit) {
   // Signature: executor(agent, parcel, base, atTile)
   executor.addAction({
     name: "DEPOSIT",
-    // 4 params cuz the PDDL domain has 3 params
+    // 4 params cuz the PDDL domain has 4 params
     executor: (agent, parcel, base, atTile) => {
       // Example values:
       // agent  = "AGENT_0D4EA4"
@@ -66,8 +66,11 @@ function buildExecutor(onMove, onPickup, onDeposit) {
 
 
 export async function getPlan(mapStore, parcelsStore, me, serverConfig) {
+  //FIXME:
   const domainText = generateDeliverooDomain();
   const problemText = generateDeliverooProblem(mapStore,parcelsStore,me,serverConfig);
+
+  //console.log(problemText)
 
   const rawPlan = await onlineSolver(domainText, problemText);
 
@@ -90,6 +93,6 @@ export async function executePlan(rawPlan, onMove, onPickup, onDeposit) {
     console.log("Plan execution completed successfully");
   } catch (error) {
     console.error("Error during the execution:", error);
-    throw error;
+    //throw error;
   }
 }

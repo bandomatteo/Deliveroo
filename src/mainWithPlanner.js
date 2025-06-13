@@ -12,6 +12,8 @@ import { ServerConfig } from "./models/serverConfig.js";
 import { getPlan, executePlan } from "./planner.js";
 import { moveAndWait } from "./actions/movement.js";
 import { direction } from "./utils/astar.js";
+import { TILE_TYPES } from "./utils/tile.js";
+import { coord2Key, key2Coord } from "./utils/hashMap.js";
 
 // onMove(x,y) → Promise that resolves after moveAndWait and state update 
 function makeOnMove(client, me) {
@@ -20,27 +22,34 @@ function makeOnMove(client, me) {
     if (!dir) {
       throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
     }
-    
+
     const oldX = me.x;
     const oldY = me.y;
-    
-    await moveAndWait(client, me, dir);
-    
-    // Wait for state to update (with timeout)
-    const timeout = 1000; // 1 second timeout
-    const startTime = Date.now();
-    
-    while ((me.x === oldX && me.y === oldY) && (Date.now() - startTime < timeout)) {
-      await new Promise(r => setTimeout(r, 10));
+    try {
+
+      await moveAndWait(client, me, dir);
+
+      // Wait for state to update (with timeout)
+      const timeout = 1000; // 1 second timeout
+      const startTime = Date.now();
+
+      while ((me.x === oldX && me.y === oldY) && (Date.now() - startTime < timeout)) {
+        await new Promise(r => setTimeout(r, 10));
+      }
+
+      if (me.x === oldX && me.y === oldY) {
+        throw new Error(`Movement failed: still at ${oldX},${oldY} after timeout`);
+      }
+
+    } catch (err) {
+      console.log("FIXME")
     }
-    
-     if (me.x === oldX && me.y === oldY) {
-      throw new Error(`Movement failed: still at ${oldX},${oldY} after timeout`);
-    }
-    
+
+
+
     // Check if  we' re at the expected position
     if (me.x !== targetX || me.y !== targetY) {
-      console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
+      //console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
     }
   };
 }
@@ -49,9 +58,9 @@ function makeOnMove(client, me) {
 function makeOnPickup(client, me) {
   return async () => {
     //const oldParcelCount = me.parcels ? me.parcels.length : 0;
-    
+
     await client.emitPickup();
-    
+
     // Wait for parcel count to increase (with timeout)
     /*const timeout = 1000;
     const startTime = Date.now();
@@ -70,21 +79,47 @@ function makeOnPickup(client, me) {
 function makeOnDeposit(client, parcels, me) {
   return async () => {
     //const oldParcelCount = me.parcels ? me.parcels.length : 0;
-    
+
     await client.emitPutdown(parcels, me.id);
-    
+
     // Wait for parcel count to decrease (with timeout)
-   /* const timeout = 1000;
-    const startTime = Date.now();
-    
-    while ((me.parcels?.length || 0) >= oldParcelCount && (Date.now() - startTime < timeout)) {
-      await new Promise(r => setTimeout(r, 10));
-    }
-    
-    if ((me.parcels?.length || 0) >= oldParcelCount) {
-      console.warn(`Deposit may have failed: parcel count still ${oldParcelCount}`);
-    }*/
+    /* const timeout = 1000;
+     const startTime = Date.now();
+     
+     while ((me.parcels?.length || 0) >= oldParcelCount && (Date.now() - startTime < timeout)) {
+       await new Promise(r => setTimeout(r, 10));
+     }
+     
+     if ((me.parcels?.length || 0) >= oldParcelCount) {
+       console.warn(`Deposit may have failed: parcel count still ${oldParcelCount}`);
+     }*/
   };
+}
+
+async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig) {
+
+  let tileMapTemp = new Map();
+
+  // Remove tiles with agents
+  for (const a of agentStore.visible(me, serverConfig)) {
+    let type = mapStore.setType(a, TILE_TYPES.EMPTY);
+    tileMapTemp.set(coord2Key(a), type);
+  }
+
+  let rawPlan;
+  try {
+    rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
+  } catch (err) {
+    console.error("Planning error:", err);
+  }
+
+  // Re-add tiles
+  for (const [key, value] of tileMapTemp) {
+    let tile = key2Coord(key);
+    mapStore.setType(tile, value);
+  }
+
+  return rawPlan;
 }
 
 async function main() {
@@ -125,13 +160,13 @@ async function main() {
     }
   });
 
-  /*client.onAgentsSensing((agents) => {
+  client.onAgentsSensing((agents) => {
     agents.forEach((a) => agentStore.addAgent(a, me.ms));
-  });*/
+  });
 
   //FIXME : Serve a rimuovere le persone dalla mappa
-  /*
-  client.onAgentsSensing((agents) => {
+
+  /*client.onAgentsSensing((agents) => {
     
     agents.forEach((a) => {
         agentStore.addAgent(a, me.ms);
@@ -142,9 +177,9 @@ async function main() {
     });
 
    
-  });
+  });*/
 
-  */
+
 
   // Wait until we know our id and the map is fully loaded
   while (!me.id || mapStore.mapSize === 0) {
@@ -179,7 +214,10 @@ async function main() {
     // computing the new plan
     let rawPlan;
     try {
-      rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
+      //rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
+      rawPlan = await planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig);
+      //console.log(rawPlan);
+
     } catch (err) {
       console.error("Planning error:", err);
       continue;
@@ -197,15 +235,15 @@ async function main() {
       //console.log("Plan execution completed successfully");
     } catch (err) {
       console.error("Error executing plan:", err);
+      console.log("FIXME")
+      console.log(isExecutingPlan)
     } finally {
       isExecutingPlan = false;
+      console.log(isExecutingPlan)
       //FIXME
       //await moveAndWait(client,me,"up");
     }
   }
 }
 
-main().catch(err => {
-  console.error("Fatal error in main:", err);
-  process.exit(1);
-});
+main().catch(err => console.error("Unhandled in main:", err));
