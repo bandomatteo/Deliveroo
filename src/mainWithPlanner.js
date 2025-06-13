@@ -15,235 +15,245 @@ import { direction } from "./utils/astar.js";
 import { TILE_TYPES } from "./utils/tile.js";
 import { coord2Key, key2Coord } from "./utils/hashMap.js";
 
-// onMove(x,y) → Promise that resolves after moveAndWait and state update 
+
+/**  
+ * @param {DeliverooClient} client - The Deliveroo client instance.
+ * @param {Me} me - The current player instance.
+ * @returns {function} - A function that takes targetX and targetY and returns a Promise.  
+ */
 function makeOnMove(client, me) {
-  return async (targetX, targetY) => {
-    const dir = direction(me, { x: targetX, y: targetY });
-    /*if (!dir) {
-      throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
-    }*/
+	return async (targetX, targetY) => {
+		const dir = direction(me, {
+			x: targetX,
+			y: targetY
+		});
+		/*if (!dir) {
+		  throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
+		}*/
 
-      await moveAndWait(client, me, dir)
-    /*const oldX = me.x;
-    const oldY = me.y;
-    try {
+		const oldX = me.x;
+		const oldY = me.y;
+		try {
 
-      //await moveAndWait(client, me, dir);
+			await moveAndWait(client, me, dir);
 
-      // Wait for state to update (with timeout)
-      const timeout = 1000; // 1 second timeout
-      const startTime = Date.now();
+			// Wait for state to update (with timeout)
+			const timeout = 1000; // 1 second timeout
+			const startTime = Date.now();
 
-      while ((me.x === oldX && me.y === oldY) && (Date.now() - startTime < timeout)) {
-        console.log("QUI ENTRO");
-        await new Promise(r => setTimeout(r, 10));
-      }
+			while ((me.x === oldX && me.y === oldY) && (Date.now() - startTime < timeout)) {
+				await new Promise(r => setTimeout(r, 10));
+			}
 
-      if (me.x === oldX && me.y === oldY) {
-        throw new Error(`Movement failed: still at ${oldX},${oldY} after timeout`);
-      }
+			if (me.x === oldX && me.y === oldY) {
+				console.warn(`Move to ${targetX},${targetY} may have failed: still at ${me.x},${me.y}`);
+			}
 
-    } catch (err) {
-      console.log(err)
-    }
+		} catch (err) {
+			console.log(err)
+		}
 
-    // Check if  we' re at the expected position
-    if (me.x !== targetX || me.y !== targetY) {
-      //console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
-    }*/
-  };
+		// Check if  we' re at the expected position
+		if (me.x !== targetX || me.y !== targetY) {
+			console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
+		}
+	};
 }
 
 // onPickup() → Promise that resolves after client.emitPickup() and state update 
+/** 
+  * @param {DeliverooClient} client - The Deliveroo client instance.
+  * @param {Me} me - The current player instance.
+  * @returns {function} - A function that returns a Promise when called.
+  * 
+  */
 function makeOnPickup(client, me) {
-  return async () => {
-    //const oldParcelCount = me.parcels ? me.parcels.length : 0;
-
-    await client.emitPickup();
-
-    // Wait for parcel count to increase (with timeout)
-    /*const timeout = 1000;
-    const startTime = Date.now();
-    
-    while ((me.parcels?.length || 0) <= oldParcelCount && (Date.now() - startTime < timeout)) {
-      await new Promise(r => setTimeout(r, 10));
-    }
-    
-    if ((me.parcels?.length || 0) <= oldParcelCount) {
-      console.warn(`Pickup may have failed: parcel count still ${oldParcelCount}`);
-    }*/
-  };
+	return async () => {
+		await client.emitPickup();
+	};
 }
 
 /** onDeposit() → Promise that resolves after client.emitPutdown() and state update */
 function makeOnDeposit(client, parcels, me) {
-  return async () => {
-    //const oldParcelCount = me.parcels ? me.parcels.length : 0;
+	return async () => {
+		//const oldParcelCount = me.parcels ? me.parcels.length : 0;
 
-    await client.emitPutdown(parcels, me.id);
+		await client.emitPutdown(parcels, me.id);
 
-    // Wait for parcel count to decrease (with timeout)
-    /* const timeout = 1000;
-     const startTime = Date.now();
-     
-     while ((me.parcels?.length || 0) >= oldParcelCount && (Date.now() - startTime < timeout)) {
-       await new Promise(r => setTimeout(r, 10));
-     }
-     
-     if ((me.parcels?.length || 0) >= oldParcelCount) {
-       console.warn(`Deposit may have failed: parcel count still ${oldParcelCount}`);
-     }*/
-  };
+		// Wait for parcel count to decrease (with timeout)
+		/* const timeout = 1000;
+		 const startTime = Date.now();
+		 
+		 while ((me.parcels?.length || 0) >= oldParcelCount && (Date.now() - startTime < timeout)) {
+		   await new Promise(r => setTimeout(r, 10));
+		 }
+		 
+		 if ((me.parcels?.length || 0) >= oldParcelCount) {
+		   console.warn(`Deposit may have failed: parcel count still ${oldParcelCount}`);
+		 }*/
+	};
 }
 
 async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig) {
 
-  let tileMapTemp = new Map();
+	let tileMapTemp = new Map();
 
-  // Remove tiles with agents
-  for (const a of agentStore.visible(me, serverConfig)) {
-    let type = mapStore.setType(a, TILE_TYPES.EMPTY);
-    tileMapTemp.set(coord2Key(a), type);
-  }
+	// Remove tiles with agents
+	for (const a of agentStore.visible(me, serverConfig)) {
+		let type = mapStore.setType(a, TILE_TYPES.EMPTY);
+		tileMapTemp.set(coord2Key(a), type);
+	}
 
-  let rawPlan;
-  try {
-    rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
-  } catch (err) {
-    console.error("Planning error:", err);
-  }
+	let rawPlan;
+	try {
+		rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
+	} catch (err) {
+		console.error("Planning error:", err);
+	}
 
-  // Re-add tiles
-  for (const [key, value] of tileMapTemp) {
-    let tile = key2Coord(key);
-    mapStore.setType(tile, value);
-  }
+	// Re-add tiles
+	for (const [key, value] of tileMapTemp) {
+		let tile = key2Coord(key);
+		mapStore.setType(tile, value);
+	}
 
-  return rawPlan;
+	return rawPlan;
 }
 
 async function main() {
-  console.log("Creating client…");
-  const client = new DeliverooClient(true);
+	console.log("Creating client…");
+	const client = new DeliverooClient(true);
 
-  console.log("Creating models…");
-  const me = new Me();
-  const parcels = new ParcelsStore();
-  const mapStore = new MapStore();
-  const agentStore = new AgentStore();
-  const serverConfig = new ServerConfig();
+	console.log("Creating models…");
+	const me = new Me();
+	const parcels = new ParcelsStore();
+	const mapStore = new MapStore();
+	const agentStore = new AgentStore();
+	const serverConfig = new ServerConfig();
 
-  client.onYou((payload, time) => {
-    me.update(payload, time);
-  });
+	client.onYou((payload, time) => {
+		me.update(payload, time);
+	});
 
-  client.onTile(({ x, y, type }) =>
-    mapStore.addTile({ x, y, type: parseInt(type) })
-  );
+	client.onTile(({
+			x,
+			y,
+			type
+		}) =>
+		mapStore.addTile({
+			x,
+			y,
+			type: parseInt(type)
+		})
+	);
 
-  client.onConfig((cfg) => {
-    serverConfig.updateConfig(cfg);
-  });
+	client.onConfig((cfg) => {
+		serverConfig.updateConfig(cfg);
+	});
 
-  client.onMap((w, h, tiles) => {
-    mapStore.mapSize = w;
-    tiles.forEach((t) =>
-      mapStore.addTile({ x: t.x, y: t.y, type: t.type })
-    );
-    mapStore.calculateDistances();
-    mapStore.calculateSparseness(serverConfig);
-  });
+	client.onMap((w, h, tiles) => {
+		mapStore.mapSize = w;
+		tiles.forEach((t) =>
+			mapStore.addTile({
+				x: t.x,
+				y: t.y,
+				type: t.type
+			})
+		);
+		mapStore.calculateDistances();
+		mapStore.calculateSparseness(serverConfig);
+	});
 
-  client.onParcelsSensing((pp) => {
-    if (mapStore.mapSize > 0) {
-      parcels.updateAll(me, pp, mapStore, serverConfig);
-    }
-  });
+	client.onParcelsSensing((pp) => {
+		if (mapStore.mapSize > 0) {
+			parcels.updateAll(me, pp, mapStore, serverConfig);
+		}
+	});
 
-  client.onAgentsSensing((agents) => {
-    agents.forEach((a) => agentStore.addAgent(a, me.ms));
-  });
+	client.onAgentsSensing((agents) => {
+		agents.forEach((a) => agentStore.addAgent(a, me.ms));
+	});
 
-  //FIXME : Serve a rimuovere le persone dalla mappa
+	//FIXME : Serve a rimuovere le persone dalla mappa
 
-  /*client.onAgentsSensing((agents) => {
-    
-    agents.forEach((a) => {
-        agentStore.addAgent(a, me.ms);
-        if (a.id !== me.id) {
-            mapStore.addTile({ x: a.x, y: a.y, type: 0 }); // Imposta il tipo a 0
-            console.log(`Agent ${a.id} detected at ${a.x},${a.y}. Marking as blocked.`);
-        }
-    });
+	/*client.onAgentsSensing((agents) => {
+	  
+	  agents.forEach((a) => {
+	      agentStore.addAgent(a, me.ms);
+	      if (a.id !== me.id) {
+	          mapStore.addTile({ x: a.x, y: a.y, type: 0 }); // Imposta il tipo a 0
+	          console.log(`Agent ${a.id} detected at ${a.x},${a.y}. Marking as blocked.`);
+	      }
+	  });
 
-   
-  });*/
+	 
+	});*/
 
 
 
-  // Wait until we know our id and the map is fully loaded
-  while (!me.id || mapStore.mapSize === 0) {
-    await new Promise((r) => setTimeout(r, 50));
-  }
+	// Wait until we know our id and the map is fully loaded
+	while (!me.id || mapStore.mapSize === 0) {
+		await new Promise((r) => setTimeout(r, 50));
+	}
 
-  // preparing the 3 action handlers to give to the executor
-  const onMove = makeOnMove(client, me);
-  const onPickup = makeOnPickup(client, me);
-  const onDeposit = makeOnDeposit(client, parcels, me);
+	// preparing the 3 action handlers to give to the executor
+	const onMove = makeOnMove(client, me);
+	const onPickup = makeOnPickup(client, me);
+	const onDeposit = makeOnDeposit(client, parcels, me);
 
-  let isExecutingPlan = false;
+	let isExecutingPlan = false;
 
-  // Simply the main loop like we had before (re-plan & execute), but now but don't overlap executions
-  while (true) {
-    await new Promise((r) => setTimeout(r, serverConfig.clock));
+	// Simply the main loop like we had before (re-plan & execute), but now but don't overlap executions
+	while (true) {
+		await new Promise((r) => setTimeout(r, serverConfig.clock));
 
-    // Skip if we're still executing a previous plan
-    if (isExecutingPlan) {
-      console.log("Still executing previous plan, skipping...");
-      continue;
-    }
+		// Skip if we're still executing a previous plan
+		if (isExecutingPlan) {
+			console.log("Still executing previous plan, skipping...");
+			continue;
+		}
 
-    /*if (me.penalty && me.penalty > 0) {
-      continue;
-    }*/
+		/*if (me.penalty && me.penalty > 0) {
+		  continue;
+		}*/
 
-    if (!me.id || mapStore.mapSize === 0) {
-      continue;
-    }
+		if (!me.id || mapStore.mapSize === 0) {
+			continue;
+		}
 
-    // computing the new plan
-    let rawPlan;
-    try {
-      //rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
-      rawPlan = await planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig);
-      //console.log(rawPlan);
+		// computing the new plan
+		let rawPlan;
+		try {
+			//rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
+			rawPlan = await planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig);
+			//console.log(rawPlan);
 
-    } catch (err) {
-      console.error("Planning error:", err);
-      continue;
-    }
+		} catch (err) {
+			console.error("Planning error:", err);
+			continue;
+		}
 
-    if (!rawPlan || rawPlan.length === 0) {
-      continue;
-    }
+		if (!rawPlan || rawPlan.length === 0) {
+			continue;
+		}
 
-    // Execute plan with  synchronization
-    isExecutingPlan = true;
-    try {
-      console.log(`Executing plan with ${rawPlan.length} actions`);
-      await executePlan(rawPlan, onMove, onPickup, onDeposit);
-      //console.log("Plan execution completed successfully");
-    } catch (err) {
-      console.error("Error executing plan:", err);
-      console.log("FIXME")
-      console.log(isExecutingPlan)
-    } finally {
-      isExecutingPlan = false;
-      console.log(isExecutingPlan)
-      //FIXME
-      //await moveAndWait(client,me,"up");
-    }
-  }
+		// Execute plan with  synchronization
+		isExecutingPlan = true;
+		try {
+			console.log(`Executing plan with ${rawPlan.length} actions`);
+			await executePlan(rawPlan, onMove, onPickup, onDeposit);
+			//console.log("Plan execution completed successfully");
+		} catch (err) {
+			console.error("Error executing plan:", err);
+			console.log("FIXME")
+			console.log(isExecutingPlan)
+		} finally {
+			isExecutingPlan = false;
+			console.log(isExecutingPlan)
+			//FIXME
+			//await moveAndWait(client,me,"up");
+		}
+	}
 }
 
-main().catch(err => console.error("Unhandled in main:", err));
+main()

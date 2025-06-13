@@ -93,6 +93,5 @@ export async function executePlan(rawPlan, onMove, onPickup, onDeposit) {
     console.log("Plan execution completed successfully");
   } catch (error) {
     console.error("Error during the execution:", error);
-    //throw error;
   }
 }
