@@ -19,21 +19,23 @@ import { coord2Key, key2Coord } from "./utils/hashMap.js";
 function makeOnMove(client, me) {
   return async (targetX, targetY) => {
     const dir = direction(me, { x: targetX, y: targetY });
-    if (!dir) {
+    /*if (!dir) {
       throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
-    }
+    }*/
 
-    const oldX = me.x;
+      await moveAndWait(client, me, dir)
+    /*const oldX = me.x;
     const oldY = me.y;
     try {
 
-      await moveAndWait(client, me, dir);
+      //await moveAndWait(client, me, dir);
 
       // Wait for state to update (with timeout)
       const timeout = 1000; // 1 second timeout
       const startTime = Date.now();
 
       while ((me.x === oldX && me.y === oldY) && (Date.now() - startTime < timeout)) {
+        console.log("QUI ENTRO");
         await new Promise(r => setTimeout(r, 10));
       }
 
@@ -42,15 +44,13 @@ function makeOnMove(client, me) {
       }
 
     } catch (err) {
-      console.log("FIXME")
+      console.log(err)
     }
-
-
 
     // Check if  we' re at the expected position
     if (me.x !== targetX || me.y !== targetY) {
       //console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
-    }
+    }*/
   };
 }
 
