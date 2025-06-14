@@ -11,7 +11,7 @@ import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
 import { getPlan, executePlan } from "./planner.js";
 import { moveAndWait } from "./actions/movement.js";
-import { direction } from "./utils/astar.js";
+import { astarSearch, direction } from "./utils/astar.js";
 import { TILE_TYPES } from "./utils/tile.js";
 import { coord2Key, key2Coord } from "./utils/hashMap.js";
 
@@ -120,6 +120,20 @@ async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverCo
   return rawPlan;
 }
 
+/**
+ * 
+ * @param {Me} me 
+ * @param {MapStore} mapStore
+ * @returns {boolean} - Returns true if the player is at a base, false otherwise.
+ */
+function checkIfIamAtBase(me, mapStore) {
+  // Convert the current position to a key
+  const currentKey = coord2Key({ x: me.x, y: me.y });
+
+  // Check if this key exists in the bases Set
+  return mapStore.bases.has(currentKey);
+}
+
 async function main() {
   console.log("Creating client…");
   const client = new DeliverooClient(true);
@@ -206,16 +220,78 @@ async function main() {
       continue;
     }
 
+    
+
+    // if the plan is empty, we just move randomly toward a base
     if (!rawPlan || rawPlan.length === 0) {
-      console.log("No plan found, moving randomly toward a base!");
+      console.log("No plan found, I shoudl move randomly towards a base");
 
-      // Trova tutte le posizioni delle basi disponibili
-      let  base;
-      [base, ] = mapStore.nearestBase(me);
+      if (checkIfIamAtBase(me, mapStore)) {
+        // Save the current base coordinates
+        const baseCoord = { x: me.x, y: me.y };
 
-      moveAndWait(client, me, direction(me, base));
+        // Remove the base tile temporarily
+        mapStore.setType(baseCoord, TILE_TYPES.EMPTY);
+
+        try {
+          // Find the nearest base and move towards it removing the current base tile
+          let [newBase,] = mapStore.nearestBase(me);
+          mapStore.setType(baseCoord, TILE_TYPES.BASE);
+
+          if (newBase) {
+
+            const fullPath = astarSearch(me, newBase, mapStore);
+
+            if (fullPath && fullPath.length > 0) {
+              // I take only the first step from the path
+              const firstStep = fullPath[0];
+              const dir = direction(me, firstStep);
+
+              if (dir) {
+                console.log(`Moving ${dir} toward new base`);
+                await moveAndWait(client, me, dir);
+              } else {
+                console.log("Couldn't determine direction for first step");
+              }
+            } else {
+              console.log("No valid path found to target base");
+            }
+          } else {
+            console.log("No other bases found");
+          }
+        } finally {
+          // Restore the base tile
+          mapStore.setType(baseCoord, TILE_TYPES.BASE);
+        }
+      }
+      else{
+        let [newBase,] = mapStore.nearestBase(me);
+        
+        if(newBase) {
+          const fullPath = astarSearch(me, newBase, mapStore);
+
+          if (fullPath && fullPath.length > 0) {
+            // Take only the first step from the path
+            const firstStep = fullPath[0];
+            const dir = direction(me, firstStep);
+
+            if (dir) {
+              console.log(`Moving ${dir} toward nearest base`);
+              await moveAndWait(client, me, dir);
+            } else {
+              console.log("Couldn't determine direction for first step");
+            }
+          } else {
+            console.log("No valid path found to target base");
+          }
+        }
+
+
+      }
+
       continue;
-    }
+
+    }//fine if
 
     // Execute plan with  synchronization
     isExecutingPlan = true;
@@ -229,9 +305,8 @@ async function main() {
       console.log(isExecutingPlan)
     } finally {
       isExecutingPlan = false;
-      console.log(isExecutingPlan)
-      //FIXME
-      //await moveAndWait(client,me,"up");
+    
+      
     }
   }
 }
