@@ -16,11 +16,37 @@ import { TILE_TYPES } from "./utils/tile.js";
 import { coord2Key, key2Coord } from "./utils/hashMap.js";
 import { exitCurrentBase, moveToNearestBase } from "./actions/movement.js";
 
+/**
+ * Handles unhandled rejections and uncaught exceptions globally
+ * This is useful for debugging and ensuring the bot doesn't crash silently.
+ * It logs the error and the promise that caused it.
+ * @param {Error} reason - The reason for the unhandled rejection.
+ * @param {Promise} promise - The promise that was rejected.  
+ */
+process.on('unhandledRejection', (reason, promise) => {
+  console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
-/**  
+/**
+ * Handles uncaught exceptions globally
+ * This is useful for debugging and ensuring the bot doesn't crash silently.
+ * It logs the error that caused the exception.
+ * @param {Error} err - The uncaught exception error.
+ */
+process.on('uncaughtException', (err) => {
+  console.log('Uncaught Exception:', err);
+});
+
+/**
+ * Creates a function that handles movement actions.
  * @param {DeliverooClient} client - The Deliveroo client instance.
  * @param {Me} me - The current player instance.
- * @returns {function} - A function that takes targetX and targetY and returns a Promise.  
+ * @returns {function} - A function that returns a Promise when called.
+ * @description
+ * This function calculates the direction from the current position to the target position,
+ * sends a move command to the client, and waits for the state to update.
+ * If the move fails or the position does not match the target after a timeout,
+ * it returns a rejected promise with an error message.
  */
 function makeOnMove(client, me) {
   return async (targetX, targetY) => {
@@ -29,15 +55,15 @@ function makeOnMove(client, me) {
       y: targetY
     });
     if (!dir) {
-      //throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
       console.warn(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
-      return;
+      // Return a rejected promise instead of throwing
+      return Promise.reject(new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`));
     }
 
     const oldX = me.x;
     const oldY = me.y;
-    try {
 
+    try {
       await moveAndWait(client, me, dir);
 
       // Wait for state to update (with timeout)
@@ -49,16 +75,24 @@ function makeOnMove(client, me) {
       }
 
       if (me.x === oldX && me.y === oldY) {
-        console.warn(`Move to ${targetX},${targetY} may have failed: still at ${me.x},${me.y}`);
+        const errorMsg = `Move to ${targetX},${targetY} may have failed: still at ${me.x},${me.y}`;
+        console.warn(errorMsg);
+        // Return a rejected promise instead of throwing
+        return Promise.reject(new Error(errorMsg));
+      }
+
+      // Check if we're at the expected position
+      if (me.x !== targetX || me.y !== targetY) {
+        const errorMsg = `Expected position ${targetX},${targetY} but at ${me.x},${me.y}`;
+        console.warn(errorMsg);
+        // Return a rejected promise instead of throwing
+        return Promise.reject(new Error(errorMsg));
       }
 
     } catch (err) {
-      console.log(err)
-    }
-
-    // Check if  we' re at the expected position
-    if (me.x !== targetX || me.y !== targetY) {
-      console.warn(`Expected position ${targetX},${targetY} but at ${me.x},${me.y}`);
+      console.log("Movement error:", err);
+      // Return a rejected promise instead of re-throwing
+      return Promise.reject(err);
     }
   };
 }
@@ -67,7 +101,8 @@ function makeOnMove(client, me) {
   * @param {DeliverooClient} client - The Deliveroo client instance.
   * @param {Me} me - The current player instance.
   * @returns {function} - A function that returns a Promise when called.
-  * 
+  * @description 
+  * This function emits a pickup event to the Deliveroo client.
   */
 function makeOnPickup(client, me) {
   return async () => {
@@ -80,6 +115,8 @@ function makeOnPickup(client, me) {
  * @param {ParcelsStore} parcels - The parcels store instance.
  * @param {Me} me - The current player instance.
  * @returns {function} - A function that returns a Promise when called.
+ * @description 
+ * This function emits a putdown event to the Deliveroo client.
  * 
  */
 function makeOnDeposit(client, parcels, me) {
@@ -97,6 +134,11 @@ function makeOnDeposit(client, parcels, me) {
  * @param {ParcelsStore} parcels - The parcels store instance.
  * @param {ServerConfig} serverConfig - The server configuration instance.
  * @returns {Promise<Array>} - The planned actions.
+ * @description
+ * This function first removes all visible agents from the map by setting their tiles to EMPTY.
+ * It then calls the getPlan function to generate a new plan based on the current map state.
+ * After the plan is generated, it restores the map state by re-adding the agents back to their original tiles.
+ * This allows the planner to work with a static map while still considering dynamic agents.
  */
 async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig) {
 
@@ -125,10 +167,14 @@ async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverCo
 }
 
 /**
- * 
- * @param {Me} me 
- * @param {MapStore} mapStore
- * @returns {boolean} - Returns true if the player is at a base, false otherwise.
+ * Checks if the current position of the agent is at a base.
+ * @param {Me} me - The current player instance.
+ * @param {MapStore} mapStore - The map store instance.
+ * @returns {boolean} - Returns true if the agent is at a base, false otherwise.
+ * @description
+ * This function converts the current position of the agent into a key using coord2Key,
+ * and checks if this key exists in the bases Set of the map store.
+ * If it exists, it means the agent is at a base.
  */
 function checkIfIamAtBase(me, mapStore) {
   // Convert the current position to a key
@@ -137,7 +183,19 @@ function checkIfIamAtBase(me, mapStore) {
   // Check if this key exists in the bases Set
   return mapStore.bases.has(currentKey);
 }
-
+/**
+ * Main function that initializes the Deliveroo client and sets up the game loop.
+ * It creates instances of the necessary models, listens for events from the client,
+ * and executes plans based on the current state of the game.
+ * @description
+ * This function initializes the Deliveroo client, sets up the models for the player,
+ * parcels, map, agents, and server configuration. It listens for events from the client
+ * to update the models accordingly. It then enters a loop where it waits for the map and player ID
+ * to be ready, computes a plan using the planner, and executes the plan using the action handlers.
+ * If no plan is found, it attempts to move to the nearest base. The loop continues indefinitely,
+ * executing plans and handling actions until the process is terminated.
+ * @throws {Error} - Throws an error if there is an issue with the planning or execution of actions.
+ */
 async function main() {
   console.log("Creating client…");
   const client = new DeliverooClient(true);
@@ -166,11 +224,7 @@ async function main() {
   client.onMap((w, h, tiles) => {
     mapStore.mapSize = w;
     tiles.forEach((t) =>
-      mapStore.addTile({
-        x: t.x,
-        y: t.y,
-        type: t.type
-      })
+      mapStore.addTile({ x: t.x,y: t.y,type: t.type})
     );
     mapStore.calculateDistances();
     mapStore.calculateSparseness(serverConfig);
@@ -196,61 +250,67 @@ async function main() {
   const onPickup = makeOnPickup(client, me);
   const onDeposit = makeOnDeposit(client, parcels, me);
 
+
   let isExecutingPlan = false;
 
-  // Simply the main loop like we had before (re-plan & execute), but now but don't overlap executions
   while (true) {
-    await new Promise((r) => setTimeout(r, serverConfig.clock));
-
-    // Skip if we're still executing a previous plan
-    if (isExecutingPlan) {
-      console.log("Still executing previous plan, skipping...");
-      continue;
-    }
-
-    if (!me.id || mapStore.mapSize === 0) {
-      continue;
-    }
-
-    // computing the new plan
-    let rawPlan;
     try {
-      //rawPlan = await getPlan(mapStore, parcels, me, serverConfig);
-      rawPlan = await planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig);
-      //console.log(rawPlan);
+      await new Promise((r) => setTimeout(r, serverConfig.clock));
 
-    } catch (err) {
-      console.error("Planning error:", err);
-      console.log(rawPlan)
-      continue;
-    }
+      if (isExecutingPlan) {
+        console.log("Still executing previous plan, skipping...");
+        continue;
+      }
 
-    // if the plan is empty, we just move randomly toward a base
-    if (!rawPlan || rawPlan.length === 0) {
-    console.log("No plan found, moving toward nearest base");
+      if (!me.id || mapStore.mapSize === 0) {
+        continue;
+      }
 
-    if (checkIfIamAtBase(me, mapStore)) {
-        await exitCurrentBase(client, me, mapStore);
-    } else {
-        await moveToNearestBase(client, me, mapStore);
-    }
-    continue;
-}
+      // Computing the new plan
+      let rawPlan;
+      try {
+        rawPlan = await planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig);
+      } catch (err) {
+        console.error("Planning error:", err);
+        continue;
+      }
 
-    // Execute plan with  synchronization
-    isExecutingPlan = true;
-    try {
-      console.log(`Executing plan with ${rawPlan.length} actions`);
-      await executePlan(rawPlan, onMove, onPickup, onDeposit);
-      //console.log("Plan execution completed successfully");
-    } catch (err) {
-      console.error("Error executing plan:", err);  
-    } finally {
-      isExecutingPlan = false;
-    
+      if (!rawPlan || rawPlan.length === 0) {
+        console.log("No plan found, moving toward nearest base");
+
+        try {
+          if (checkIfIamAtBase(me, mapStore)) {
+            await exitCurrentBase(client, me, mapStore);
+          } else {
+            await moveToNearestBase(client, me, mapStore);
+          }
+        } catch (baseErr) {
+          console.error("Error moving to base:", baseErr.message);
+        }
+        continue;
+      }
+
       
+      isExecutingPlan = true;
+      try {
+        console.log(`Executing plan with ${rawPlan.length} actions`);
+        await executePlan(rawPlan, onMove, onPickup, onDeposit);
+        console.log("Plan execution completed successfully");
+      } catch (err) {
+        console.error("Plan execution failed:", err.message);
+        console.log("Will generate new plan in next iteration");
+      } finally {
+        isExecutingPlan = false;
+      }
+
+    } catch (mainLoopErr) {
+      console.error("Main loop error:", mainLoopErr.message);
+      isExecutingPlan = false;
     }
   }
-}
+
+}//fine main
 
 main()
+
+
