@@ -1,5 +1,3 @@
-// src/utils/pddlTemplates.js
-
 import { isWalkableTile, TILE_TYPES } from "../utils/tile.js"; 
 
 

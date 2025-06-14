@@ -3,12 +3,6 @@ import config from "../../config.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 
 
-/**
- * @class DeliverooClient
- * @description
- * This class is used to interact with the Deliveroo API.
- * It allows the agent to send and receive events related to the game.
- */
  class DeliverooClient {
   /**
    * Creates an instance of DeliverooClient.

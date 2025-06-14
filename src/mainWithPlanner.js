@@ -6,7 +6,7 @@ import { ParcelsStore } from "./models/parcelsStore.js";
 import { MapStore } from "./models/mapStore.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
-import { getPlan, executePlan } from "./planner.js";
+import { getPlan, executePlan } from "./PDDL/planner.js";
 import { moveAndWait, exitCurrentBase, moveToNearestBase } from "./actions/movement.js";
 import { direction } from "./utils/astar.js";
 import { TILE_TYPES } from "./utils/tile.js";

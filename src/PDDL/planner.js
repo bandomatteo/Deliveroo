@@ -1,9 +1,9 @@
 import { onlineSolver, PddlExecutor } from "@unitn-asa/pddl-client";
-import { generateDeliverooDomain, generateDeliverooProblem } from "./utils/pddlTemplates.js";
-import { MapStore } from "./models/mapStore.js";
-import { ParcelsStore } from "./models/parcelsStore.js";
-import { Me } from "./models/me.js";
-import { ServerConfig } from "./models/serverConfig.js";
+import { generateDeliverooDomain, generateDeliverooProblem } from "./pddlTemplates.js";
+import { MapStore } from "../models/mapStore.js";
+import { ParcelsStore } from "../models/parcelsStore.js";
+import { Me } from "../models/me.js";
+import { ServerConfig } from "../models/serverConfig.js";
 
 
 /**
@@ -86,6 +86,7 @@ function buildExecutor(onMove, onPickup, onDeposit) {
 export async function getPlan(mapStore, parcelsStore, me, serverConfig) {
   const domainText = generateDeliverooDomain();
   const problemText = generateDeliverooProblem(mapStore, parcelsStore, me, serverConfig);
+  //console.log("PDDL Domain:\n", domainText);
 
   const rawPlan = await onlineSolver(domainText, problemText);
 
