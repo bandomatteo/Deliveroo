@@ -14,6 +14,7 @@ import { moveAndWait } from "./actions/movement.js";
 import { astarSearch, direction } from "./utils/astar.js";
 import { TILE_TYPES } from "./utils/tile.js";
 import { coord2Key, key2Coord } from "./utils/hashMap.js";
+import { exitCurrentBase, moveToNearestBase } from "./actions/movement.js";
 
 
 /**  
@@ -27,9 +28,11 @@ function makeOnMove(client, me) {
       x: targetX,
       y: targetY
     });
-    /*if (!dir) {
-      throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
-    }*/
+    if (!dir) {
+      //throw new Error(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
+      console.warn(`Cannot find direction from ${me.x},${me.y} to ${targetX},${targetY}`);
+      return;
+    }
 
     const oldX = me.x;
     const oldY = me.y;
@@ -217,81 +220,21 @@ async function main() {
 
     } catch (err) {
       console.error("Planning error:", err);
+      console.log(rawPlan)
       continue;
     }
 
-    
-
     // if the plan is empty, we just move randomly toward a base
     if (!rawPlan || rawPlan.length === 0) {
-      console.log("No plan found, I shoudl move randomly towards a base");
+    console.log("No plan found, moving toward nearest base");
 
-      if (checkIfIamAtBase(me, mapStore)) {
-        // Save the current base coordinates
-        const baseCoord = { x: me.x, y: me.y };
-
-        // Remove the base tile temporarily
-        mapStore.setType(baseCoord, TILE_TYPES.EMPTY);
-
-        try {
-          // Find the nearest base and move towards it removing the current base tile
-          let [newBase,] = mapStore.nearestBase(me);
-          mapStore.setType(baseCoord, TILE_TYPES.BASE);
-
-          if (newBase) {
-
-            const fullPath = astarSearch(me, newBase, mapStore);
-
-            if (fullPath && fullPath.length > 0) {
-              // I take only the first step from the path
-              const firstStep = fullPath[0];
-              const dir = direction(me, firstStep);
-
-              if (dir) {
-                console.log(`Moving ${dir} toward new base`);
-                await moveAndWait(client, me, dir);
-              } else {
-                console.log("Couldn't determine direction for first step");
-              }
-            } else {
-              console.log("No valid path found to target base");
-            }
-          } else {
-            console.log("No other bases found");
-          }
-        } finally {
-          // Restore the base tile
-          mapStore.setType(baseCoord, TILE_TYPES.BASE);
-        }
-      }
-      else{
-        let [newBase,] = mapStore.nearestBase(me);
-        
-        if(newBase) {
-          const fullPath = astarSearch(me, newBase, mapStore);
-
-          if (fullPath && fullPath.length > 0) {
-            // Take only the first step from the path
-            const firstStep = fullPath[0];
-            const dir = direction(me, firstStep);
-
-            if (dir) {
-              console.log(`Moving ${dir} toward nearest base`);
-              await moveAndWait(client, me, dir);
-            } else {
-              console.log("Couldn't determine direction for first step");
-            }
-          } else {
-            console.log("No valid path found to target base");
-          }
-        }
-
-
-      }
-
-      continue;
-
-    }//fine if
+    if (checkIfIamAtBase(me, mapStore)) {
+        await exitCurrentBase(client, me, mapStore);
+    } else {
+        await moveToNearestBase(client, me, mapStore);
+    }
+    continue;
+}
 
     // Execute plan with  synchronization
     isExecutingPlan = true;
@@ -300,9 +243,7 @@ async function main() {
       await executePlan(rawPlan, onMove, onPickup, onDeposit);
       //console.log("Plan execution completed successfully");
     } catch (err) {
-      console.error("Error executing plan:", err);
-      console.log("FIXME")
-      console.log(isExecutingPlan)
+      console.error("Error executing plan:", err);  
     } finally {
       isExecutingPlan = false;
     

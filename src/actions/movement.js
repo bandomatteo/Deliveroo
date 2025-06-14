@@ -165,5 +165,54 @@ export async function goAway(client, me, mate, mapStore) {
   }
 }
 
+/**
+ * Moves to the nearest base using A* search algorithm.
+ * If no base is found or no valid path exists, it returns false.
+ * @param {DeliverooClient} client
+ * @param {Me} me
+ * @param {MapStore} mapStore
+ * @returns {Promise<boolean>} - Returns true if moved successfully, false otherwise.
+ */
+export async function moveToNearestBase(client, me, mapStore) {
+    const [newBase] = mapStore.nearestBase(me);
+    if (!newBase) {
+        console.log("No bases found");
+        return false;
+    }
 
+    const fullPath = astarSearch(me, newBase, mapStore);
+    if (!fullPath?.length) {
+        console.log("No valid path to base");
+        return false;
+    }
+
+    const firstStep = fullPath[0];
+    const dir = direction(me, firstStep);
+    if (!dir) {
+        console.log("Couldn't determine direction");
+        return false;
+    }
+
+    await moveAndWait(client, me, dir);
+    return true;
+}
+
+/**
+ * Exits the current base and moves to the nearest base.
+ * Temporarily removes the base tile to allow movement.
+ * @param {DeliverooClient} client
+ * @param {Me} me
+ * @param {MapStore} mapStore
+ * @returns {Promise<boolean>} - Returns true if moved successfully, false otherwise.
+ */
+export async function exitCurrentBase(client, me, mapStore) {
+    const baseCoord = { x: me.x, y: me.y };
+    mapStore.setType(baseCoord, TILE_TYPES.WALKABLE);
+
+    try {
+        return await moveToNearestBase(client, me, mapStore);
+    } finally {
+        mapStore.setType(baseCoord, TILE_TYPES.BASE);
+    }
+}
 
