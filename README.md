@@ -1,7 +1,18 @@
 # Deliveroo
 
-## Initial configuration
+# Progetto Deliveroo AI
+
+# Per installare JSDOC
+Globally
+```bash
+npm install -g jsdoc
 ```
-npm install
+For local installation (as dev dependency):
+```bash
+npm install --save-dev jsdoc
 ```
-Edit ‘host’ and ‘token’ in `config.js`
+
+# Generating Docs
+```bash
+npm run generate-docs
+```
