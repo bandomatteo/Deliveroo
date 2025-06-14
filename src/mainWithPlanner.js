@@ -63,7 +63,6 @@ function makeOnMove(client, me) {
   };
 }
 
-// onPickup() → Promise that resolves after client.emitPickup() and state update 
 /** 
   * @param {DeliverooClient} client - The Deliveroo client instance.
   * @param {Me} me - The current player instance.
@@ -76,27 +75,29 @@ function makeOnPickup(client, me) {
   };
 }
 
-/** onDeposit() → Promise that resolves after client.emitPutdown() and state update */
+/**
+ * @param {DeliverooClient} client - The Deliveroo client instance.
+ * @param {ParcelsStore} parcels - The parcels store instance.
+ * @param {Me} me - The current player instance.
+ * @returns {function} - A function that returns a Promise when called.
+ * 
+ */
 function makeOnDeposit(client, parcels, me) {
   return async () => {
-    //const oldParcelCount = me.parcels ? me.parcels.length : 0;
-
     await client.emitPutdown(parcels, me.id);
-
-    // Wait for parcel count to decrease (with timeout)
-    /* const timeout = 1000;
-     const startTime = Date.now();
-     
-     while ((me.parcels?.length || 0) >= oldParcelCount && (Date.now() - startTime < timeout)) {
-       await new Promise(r => setTimeout(r, 10));
-     }
-     
-     if ((me.parcels?.length || 0) >= oldParcelCount) {
-       console.warn(`Deposit may have failed: parcel count still ${oldParcelCount}`);
-     }*/
   };
 }
 
+/**
+ * Plans with dynamic agents by temporarily removing them from the map,
+ * executing the plan, and then restoring the map state.
+ * @param {MapStore} mapStore - The map store instance.
+ * @param {AgentStore} agentStore - The agent store instance.
+ * @param {Me} me - The current player instance.
+ * @param {ParcelsStore} parcels - The parcels store instance.
+ * @param {ServerConfig} serverConfig - The server configuration instance.
+ * @returns {Promise<Array>} - The planned actions.
+ */
 async function planWithDynamicAgents(mapStore, agentStore, me, parcels, serverConfig) {
 
   let tileMapTemp = new Map();
