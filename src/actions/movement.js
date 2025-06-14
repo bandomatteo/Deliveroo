@@ -198,13 +198,19 @@ export async function moveToNearestBase(client, me, mapStore) {
 }
 
 /**
- * Exits the current base and moves to the nearest base.
- * Temporarily removes the base tile to allow movement.
- * @param {DeliverooClient} client
- * @param {Me} me
- * @param {MapStore} mapStore
- * @returns {Promise<boolean>} - Returns true if moved successfully, false otherwise.
- */
+  * Exits the current base by setting the tile type to WALKABLE and then moving to the nearest base.
+  * After moving, it resets the tile type back to BASE.
+  * @param {DeliverooClient} client - The Deliveroo client instance.
+  * @param {Me} me - The current player instance.
+  * @param {MapStore} mapStore - The MapStore instance containing the current map state.
+  * @returns {Promise<boolean>} - Returns true if successfully moved to a new base, false otherwise.
+  * @description
+  * This function is used to exit the current base by first marking the tile as WALKABLE,
+  * then finding the nearest base and moving towards it. After the move, it resets the tile type
+  * back to BASE. This is useful for scenarios where the player needs to leave the current base
+  * and find a new one, ensuring that the map state is correctly updated.
+  */ 
+
 export async function exitCurrentBase(client, me, mapStore) {
     const baseCoord = { x: me.x, y: me.y };
     mapStore.setType(baseCoord, TILE_TYPES.WALKABLE);

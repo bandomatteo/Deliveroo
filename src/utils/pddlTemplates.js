@@ -2,11 +2,23 @@
 
 import { isWalkableTile, TILE_TYPES } from "../utils/tile.js"; 
 
+
 /**
- * Replace any non‐alphanumeric character with an underscore,
- * force lowercase, and collapse repeated underscores.
- * So we get something like "x,y" --> "t_x_y"
- * or "Agent‐42" --> "agent_42".
+ * Sanitizes a raw PDDL name by trimming, converting to lowercase,
+ * replacing non-alphanumeric characters with underscores, and removing
+ * leading and trailing underscores.
+ * @param {string} raw - The raw name to sanitize. 
+ * @return {string} - The sanitized PDDL name.
+ * @description
+ * This function is useful for ensuring that names used in PDDL (Planning Domain Definition Language)
+ * are valid and follow the naming conventions required by PDDL, such as using lowercase letters,
+ * numbers, and underscores, while avoiding spaces and special characters. 
+ * @example
+ * sanitizePddlName("  My Name!  "); // returns "my_name"
+ * sanitizePddlName("Invalid@Name#123"); // returns "invalid_name_123"
+ * sanitizePddlName("  __Extra__Underscores__  "); // returns "extra_underscores"
+ * sanitizePddlName("1234"); // returns "1234"
+ * sanitizePddlName("!@#$%^&*()"); // returns ""
  */
 export function sanitizePddlName(raw) {
   return raw
