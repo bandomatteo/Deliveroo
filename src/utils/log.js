@@ -4,6 +4,10 @@
  * This module provides a logging utility for different log levels in a game or application.
  * It defines constants for various log levels such as Master, Slave, and Action.
  * The `log` function allows logging messages at specified levels, filtering out messages that do not match the provided log level.
+ * @property {Object} LOG_LEVELS - An object containing constants for each log level.
+ * @property {string} LOG_LEVELS.MASTER - Represents the master log level.
+ * @property {string} LOG_LEVELS.SLAVE - Represents the slave log level.
+ * @property {string} LOG_LEVELS.ACTION - Represents the action log level.
  * @example
  * // Example usage:
  * import { log, LOG_LEVELS } from './log';

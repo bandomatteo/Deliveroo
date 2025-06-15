@@ -1,10 +1,20 @@
 
 /**
  * Represents the local player in the game.
- * @class Me
+ * @class 
  * @description
  * This class holds the state of the local player, including their ID, team information, position, score, and penalty.
  * It provides a method to update the player's state based on server payload and time.
+ * * @property {string|null} id - The unique identifier of the player.
+ * @property {string|null} teamId - The ID of the team the player belongs to.
+ * @property {string|null} teamName - The name of the team the player belongs to.
+ * @property {string|null} name - The name of the player.
+ * @property {number|null} x - The x-coordinate of the player's position.
+ * @property {number|null} y - The y-coordinate of the player's position.
+ * @property {number|null} score - The current score of the player.
+ * @property {number|null} penalty - The current penalty of the player.
+ * @property {number|null} ms - The timestamp in milliseconds when the player's state was last updated.
+ * @property {number|null} frame - The frame number when the player's state was last updated.
  */
 export class Me {
   constructor() {

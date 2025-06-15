@@ -2,13 +2,18 @@ import { MapStore } from "./mapStore.js";
 
 /**
  * Communication class to handle game communication
- * @class Communication
+ * @class 
  * @description
  * This class is responsible for managing the communication related to parcel dropping and picking up.
  * It allows setting the dropped parcel's position, value, quantity, and the agent responsible for picking it up.
  * It also manages the distance to the nearest base for the dropped parcel.
  * It provides methods to reset the drop state and set the dropped parcel's details.
- * 
+ * @property {number} droppedValue - The value of the dropped parcel.
+ * @property {number} droppedQuantity - The quantity of the dropped parcel.
+ * @property {string} agentToPickup - The ID of the agent responsible for picking up the dropped parcel.
+ * @property {{x: number, y: number}} droppedCoord - The coordinates where the parcel is dropped.
+ * @property {number} droppedBaseDistance - The distance to the nearest base for the dropped parcel.
+ * @property {string|null} moveAwayAgentId - The ID of the agent that is moving away from the dropped parcel.
  */
 export class Communication {
     constructor() {
@@ -28,9 +33,9 @@ export class Communication {
         this.droppedValue = 0;
         this.droppedQuantity = 0;
         this.agentToPickup = null;
-        /**
-         * @type {{x : number, y : number}}
-         */
+        
+         // @type {{x : number, y : number}}
+         
         this.droppedCoord = { x: undefined, y: undefined };
         this.droppedBaseDistance = null;
     }
