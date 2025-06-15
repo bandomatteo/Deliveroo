@@ -16,30 +16,24 @@ import config from '../utils/gameConfig.js';
  * It also includes methods to reset k-means assignments and calculate the sparseness of spawn tiles.
  * It uses a Map to store tiles and their types, a Set to store bases, and a Map to store spawn tiles.
  * It also maintains a distance matrix for efficient distance calculations between tiles.
+ * @property {Map<string, number>} map - A map where keys are tile coordinates (as strings) and values are tile types.
+ * @property {Set<string>} bases - A set of base tile coordinates.
+ * @property {Map<string, {coord: string, assignedTo: string, available: boolean}>} spawnTiles - A map of spawn tiles with their coordinates, assigned agent, and availability status.
+ * @property {number} mapSize - The size of the map.
+ * @property {Array<Array<number>>} distMat - The distance matrix for all valid tiles in the map.
+ * @property {Map<string, number>} indexOf - A map to quickly access the index of a tile based on its coordinates.
+ * @property {boolean} isSpawnSparse - A flag indicating whether spawn tiles are sparse based on the server configuration.
+ * @throws {Error} If the map size is null when calculating distances.
  */
 export class MapStore {
 
     constructor() {
-
-        // @type { Map< string, number > }
-
         this.map = new Map();
-
-
-        // @type { Set< string > }
-
         this.bases = new Set();
-
-
-        //@type { Map< string, {coord: string, assignedTo: string, available : boolean } >}
-
         this.spawnTiles = new Map();
-
         this.mapSize = null;
-
         this.distMat = null;   // Will be the distance matrix
         this.indexOf = null;
-
         this.isSpawnSparse = false; // Check is spawn tiles are sparse
     }
 

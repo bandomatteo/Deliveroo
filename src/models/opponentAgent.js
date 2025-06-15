@@ -9,6 +9,15 @@ import { DIRECTIONS } from "../utils/directions.js";
  * It is typically used to store information about the agents that are not controlled by the player.
  * * @param {Object} agent - The agent object containing id, name, teamId, teamName, x, y, score
  * @param {number} timestamp - The timestamp of the agent's state
+ * @property {string} id - The unique identifier of the agent.
+ * @property {string} name - The name of the agent.
+ * @property {string} teamId - The ID of the team the agent belongs to.
+ * @property {string} teamName - The name of the team the agent belongs to.
+ * @property {number} x - The x-coordinate of the agent's position.
+ * @property {number} y - The y-coordinate of the agent's position.
+ * @property {number} score - The current score of the agent.
+ * @property {number} timestamp - The timestamp in milliseconds when the agent's state was last updated.
+ * @property {string} direction - The direction the agent is facing (UP, DOWN, LEFT, RIGHT, NONE).
  */
 export class OpponentAgent {
     

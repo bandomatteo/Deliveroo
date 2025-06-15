@@ -11,6 +11,7 @@ import { ServerConfig } from "./serverConfig.js";
  * This class is responsible for managing the agents in the game.
  * It allows adding, removing, and updating agents, as well as finding visible agents based on the player's position and the game configuration.
  * It uses a Map to store agents, where the key is the agent's ID and the value is an instance of OpponentAgent.
+ * @property {Map} map - A Map to store agents, where the key is the agent's ID and the value is an OpponentAgent instance.
  */
 export class AgentStore {
     constructor() {
