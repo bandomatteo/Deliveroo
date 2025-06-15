@@ -33,7 +33,7 @@ const PICKUP_NEAR_PARCEL = Number.MAX_SAFE_INTEGER - 3;
  * @description
  * This module exports various constants used in the game configuration.
  * These constants include maximum ratios for green cells and spawn points, parameters for K-means clustering,
- * survival lambda for parcels, agent camp time, and various base and agent configurations.
+ * survival decaying constants for parcels, agent camp time, and various base and agent configurations.
  * These constants are used throughout the game to ensure consistent behavior and performance.
  * @property {number} MAX_GREEN_CELL_RATIO - Maximum ratio of green cells in the game.
  * @property {number} MAX_SPAWN_RATIO - Maximum ratio of spawn points in the game.

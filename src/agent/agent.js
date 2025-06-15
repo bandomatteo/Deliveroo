@@ -13,7 +13,6 @@ import { AgentStore } from "../models/agentStore.js";
 import { TILE_TYPES } from "../utils/tile.js";
 import { ServerConfig } from "../models/serverConfig.js";
 import config from "../utils/gameConfig.js";
-import { ioTypedSocket } from "@unitn-asa/deliveroo-js-client";
 import gameConfig from "../utils/gameConfig.js";
 
 /**
