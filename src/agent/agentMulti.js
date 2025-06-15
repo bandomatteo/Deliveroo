@@ -26,7 +26,7 @@ import gameConfig from "../utils/gameConfig.js";
  * The agent can perform actions such as picking up parcels, depositing them, exploring the map, and avoiding collisions with other agents.
  * It also manages the agent's state, including movement, camping, and collision detection.
  * The class is designed to be extensible, allowing for the addition of new intentions and actions as needed.
- * @class MultiAgent
+ * @class 
  * @param {DeliverooClient} client - The client instance for API communication.
  * @param {Me} me - The agent's own state.
  * @param {Me} mate - The mate agent's state (for master agents, this is the slave agent).
@@ -47,24 +47,6 @@ import gameConfig from "../utils/gameConfig.js";
  * It also includes logging functionality to track agent actions and intentions
  */
 export class MultiAgent {
-  /**
-   * Creates an instance of MultiAgent.
-   * @param {DeliverooClient} client - The client instance for API communication.
-   * @param {Me} me - The agent's own state.
-   * @param {Me} mate - The mate agent's state (for master agents, this is the slave agent).
-   * @param {ParcelsStore} parcels - The store for managing parcels.
-   * @param {MapStore} mapStore - The store for managing the game map.
-   * @param {AgentStore} agentStore - The store for managing agents.
-   * @param {Communication} communication - The communication model for the agent.
-   * @param {ServerConfig} serverConfig - The server configuration for the game.
-   * @param {boolean} isMaster - Flag to check if the agent is a master agent.
-   * @description
-   * The constructor initializes the MultiAgent instance with the provided parameters.
-   * It sets up the agent's state, including desires, intentions, pathfinding variables, and timers for exploring and camping.
-   * It also initializes logging levels for tracking agent actions and intentions.
-   * The agent's communication model is set up to allow for interaction with other agents and the game server.
-   * The constructor prepares the agent to perform actions based on its beliefs, desires, and intentions.
-   */
   constructor(client, me, mate, parcels, mapStore, agentStore, communication, serverConfig, isMaster) {
     this.client = client;
     this.me = me;
