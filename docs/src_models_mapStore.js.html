@@ -1,0 +1,414 @@
+<!DOCTYPE html><html lang="en" style="font-size:16px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Source: src/models/mapStore.js</title><!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]--><script src="scripts/third-party/hljs.js" defer="defer"></script><script src="scripts/third-party/hljs-line-num.js" defer="defer"></script><script src="scripts/third-party/popper.js" defer="defer"></script><script src="scripts/third-party/tippy.js" defer="defer"></script><script src="scripts/third-party/tocbot.min.js"></script><script>var baseURL="/",locationPathname="";baseURL=(locationPathname=document.location.pathname).substr(0,locationPathname.lastIndexOf("/")+1)</script><link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css"><svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none"><defs><symbol id="copy-icon" viewbox="0 0 488.3 488.3"><g><path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/><path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/></g></symbol><symbol id="search-icon" viewBox="0 0 512 512"><g><g><path d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z"/></g></g><g><g><path d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z"/></g></g></symbol><symbol id="font-size-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11.246 15H4.754l-2 5H.6L7 4h2l6.4 16h-2.154l-2-5zm-.8-2L8 6.885 5.554 13h4.892zM21 12.535V12h2v8h-2v-.535a4 4 0 1 1 0-6.93zM19 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol><symbol id="add-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></symbol><symbol id="minus-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 11h14v2H5z"/></symbol><symbol id="dark-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol><symbol id="light-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.537 19.567A9.961 9.961 0 0 1 12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c0 2.136-.67 4.116-1.81 5.74L17 12h3a8 8 0 1 0-2.46 5.772l.997 1.795z"/></symbol><symbol id="down-icon" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"></path></symbol><symbol id="codepen-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.5 13.202L13 15.535v3.596L19.197 15 16.5 13.202zM14.697 12L12 10.202 9.303 12 12 13.798 14.697 12zM20 10.869L18.303 12 20 13.131V10.87zM19.197 9L13 4.869v3.596l3.5 2.333L19.197 9zM7.5 10.798L11 8.465V4.869L4.803 9 7.5 10.798zM4.803 15L11 19.131v-3.596l-3.5-2.333L4.803 15zM4 13.131L5.697 12 4 10.869v2.262zM2 9a1 1 0 0 1 .445-.832l9-6a1 1 0 0 1 1.11 0l9 6A1 1 0 0 1 22 9v6a1 1 0 0 1-.445.832l-9 6a1 1 0 0 1-1.11 0l-9-6A1 1 0 0 1 2 15V9z"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></symbol><symbol id="menu-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></symbol></defs></svg></head><body data-theme="dark"><div class="sidebar-container"><div class="sidebar" id="sidebar"><div class="sidebar-items-container"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-modules"><div>Modules</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="module-config.html">config</a></div><div class="sidebar-section-children"><a href="module-directions.html">directions</a></div><div class="sidebar-section-children"><a href="module-gameConfig.html">gameConfig</a></div><div class="sidebar-section-children"><a href="module-geometry.html">geometry</a></div><div class="sidebar-section-children"><a href="module-hashMap.html">hashMap</a></div><div class="sidebar-section-children"><a href="module-intentions.html">intentions</a></div><div class="sidebar-section-children"><a href="module-log.html">log</a></div><div class="sidebar-section-children"><a href="module-misc.html">misc</a></div><div class="sidebar-section-children"><a href="module-tile.html">tile</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Agent.html">Agent</a></div><div class="sidebar-section-children"><a href="AgentStore.html">AgentStore</a></div><div class="sidebar-section-children"><a href="Communication.html">Communication</a></div><div class="sidebar-section-children"><a href="DeliverooClient.html">DeliverooClient</a></div><div class="sidebar-section-children"><a href="MapStore.html">MapStore</a></div><div class="sidebar-section-children"><a href="Me.html">Me</a></div><div class="sidebar-section-children"><a href="MultiAgent.html">MultiAgent</a></div><div class="sidebar-section-children"><a href="OpponentAgent.html">OpponentAgent</a></div><div class="sidebar-section-children"><a href="Parcel.html">Parcel</a></div><div class="sidebar-section-children"><a href="ParcelsStore.html">ParcelsStore</a></div><div class="sidebar-section-children"><a href="ServerConfig.html">ServerConfig</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-global"><div>Global</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="global.html#astarSearch">astarSearch</a></div><div class="sidebar-section-children"><a href="global.html#buildExecutor">buildExecutor</a></div><div class="sidebar-section-children"><a href="global.html#checkIfIamAtBase">checkIfIamAtBase</a></div><div class="sidebar-section-children"><a href="global.html#direction">direction</a></div><div class="sidebar-section-children"><a href="global.html#executePlan">executePlan</a></div><div class="sidebar-section-children"><a href="global.html#exitCurrentBase">exitCurrentBase</a></div><div class="sidebar-section-children"><a href="global.html#generateDeliverooDomain">generateDeliverooDomain</a></div><div class="sidebar-section-children"><a href="global.html#generateDeliverooProblem">generateDeliverooProblem</a></div><div class="sidebar-section-children"><a href="global.html#getNearTiles">getNearTiles</a></div><div class="sidebar-section-children"><a href="global.html#getPlan">getPlan</a></div><div class="sidebar-section-children"><a href="global.html#goAway">goAway</a></div><div class="sidebar-section-children"><a href="global.html#initApp">initApp</a></div><div class="sidebar-section-children"><a href="global.html#main">main</a></div><div class="sidebar-section-children"><a href="global.html#mainMulti">mainMulti</a></div><div class="sidebar-section-children"><a href="global.html#mainSinglePDDL">mainSinglePDDL</a></div><div class="sidebar-section-children"><a href="global.html#makeOnDeposit">makeOnDeposit</a></div><div class="sidebar-section-children"><a href="global.html#makeOnMove">makeOnMove</a></div><div class="sidebar-section-children"><a href="global.html#makeOnPickup">makeOnPickup</a></div><div class="sidebar-section-children"><a href="global.html#moveAndWait">moveAndWait</a></div><div class="sidebar-section-children"><a href="global.html#moveToNearestBase">moveToNearestBase</a></div><div class="sidebar-section-children"><a href="global.html#planWithDynamicAgents">planWithDynamicAgents</a></div><div class="sidebar-section-children"><a href="global.html#randomMoveAndBack">randomMoveAndBack</a></div><div class="sidebar-section-children"><a href="global.html#registerEventHandlers">registerEventHandlers</a></div><div class="sidebar-section-children"><a href="global.html#runPlanningLoop">runPlanningLoop</a></div><div class="sidebar-section-children"><a href="global.html#sanitizePddlName">sanitizePddlName</a></div><div class="sidebar-section-children"><a href="global.html#smartMove">smartMove</a></div><div class="sidebar-section-children"><a href="global.html#smartMoveToNearestBase">smartMoveToNearestBase</a></div><div class="sidebar-section-children"><a href="global.html#smartMoveToNearestBaseAndPutDown">smartMoveToNearestBaseAndPutDown</a></div><div class="sidebar-section-children"><a href="global.html#waitForAppReady">waitForAppReady</a></div></div></div></div></div><div class="navbar-container" id="VuAckcnZhf"><nav class="navbar"><div class="navbar-left-items"></div><div class="navbar-right-items"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div><nav></nav></nav></div><div class="toc-container"><div class="toc-content"><span class="bold">On this page</span><div id="eed4d2a0bfd64539bb9df78095dec881"></div></div></div><div class="body-wrapper"><div class="main-content"><div class="main-wrapper"><section id="source-page" class="source-page"><header><h1 id="title" class="has-anchor">src_models_mapStore.js</h1></header><article><pre class="prettyprint source lang-js"><code>import { euclidean_distance } from "../utils/geometry.js";
+import { coord2Key } from "../utils/hashMap.js";
+import { key2Coord } from "../utils/hashMap.js";
+import { TILE_TYPES } from "../utils/tile.js";
+import { ServerConfig } from "./serverConfig.js";
+import { Me } from "./me.js";
+import config from '../utils/gameConfig.js';
+
+/**
+ * MapStore class to store the game map and its tiles
+ * @class 
+ * @description
+ * This class is responsible for managing the game map, including adding tiles, calculating distances,
+ * and handling spawn tiles. It provides methods to add tiles, set their types, calculate distances,
+ * find nearest bases, and perform k-means clustering for spawn tile assignment.
+ * It also includes methods to reset k-means assignments and calculate the sparseness of spawn tiles.
+ * It uses a Map to store tiles and their types, a Set to store bases, and a Map to store spawn tiles.
+ * It also maintains a distance matrix for efficient distance calculations between tiles.
+ */
+export class MapStore {
+
+    constructor() {
+
+        // @type { Map&lt; string, number > }
+
+        this.map = new Map();
+
+
+        // @type { Set&lt; string > }
+
+        this.bases = new Set();
+
+
+        //@type { Map&lt; string, {coord: string, assignedTo: string, available : boolean } >}
+
+        this.spawnTiles = new Map();
+
+        this.mapSize = null;
+
+        this.distMat = null;   // Will be the distance matrix
+        this.indexOf = null;
+
+        this.isSpawnSparse = false; // Check is spawn tiles are sparse
+    }
+
+    /**
+     * Adds a tile to the map and updates spawn tiles and bases accordingly.
+     * @param {Object} tile - The tile object containing coordinates and type.
+     * @description
+     * This method adds a tile to the map, updates the spawn tiles if the tile is a spawn tile,
+     * and adds the tile to the bases set if it is a base tile.
+     */
+    addTile(tile) {
+        const key = coord2Key(tile)   // Converted to string because js handles object by reference
+
+        this.map.set(key, tile.type);
+
+        if (tile.type === TILE_TYPES.SPAWN) {
+            this.spawnTiles.set(key, { coord: key, assignedTo: null, available: true });
+        }
+        else if (tile.type === TILE_TYPES.BASE) {
+            this.bases.add(key);
+        }
+    }
+
+    /**
+     * Sets the size of the map.
+     * @param {number} size - The size of the map.
+     * @description
+     * This method sets the size of the map, which is used for distance calculations.
+     */
+    set size(size) {
+        this.mapSize = size
+    }
+
+    /**
+     * Sets the type of a tile and updates spawn tiles and bases accordingly.
+     * @param {Object} tile - The tile object containing coordinates.
+     * @param {number} type - The type of the tile to set.
+     * @returns {number} - The old type of the tile before the update.
+     * @description
+     * This method updates the type of a tile in the map. If the old type was SPAWN, it marks the spawn tile as unavailable.
+     * If the old type was BASE, it removes the base from the set. It then sets the new type and updates spawn tiles and bases accordingly.
+     */
+    setType(tile, type) {
+        let key = coord2Key(tile);
+        let oldType = this.map.get(key);
+
+        if (oldType === TILE_TYPES.SPAWN) {
+            this.spawnTiles.get(key).available = false;
+        }
+        else if (oldType === TILE_TYPES.BASE) {
+            this.bases.delete(key);
+        }
+
+        this.map.set(key, type);
+
+        if (type === TILE_TYPES.SPAWN) {
+            this.spawnTiles.get(key).available = true;
+        }
+        else if (type === TILE_TYPES.BASE) {
+            this.bases.add(key);
+        }
+
+
+        return oldType;
+    }
+
+
+    /**
+     * Finds a random spawn tile that is available and assigned to the given agent or unassigned.
+     * @description
+     * This method filters the spawn tiles to find those that are available and either assigned to the given agent or unassigned.
+     * It then selects a random tile from the filtered list and returns its coordinates.
+     * @param {Me} me - The agent for whom the spawn tile is being searched.
+     * @returns { {x : number, y : number} } - The coordinates of the randomly selected spawn tile.
+     * @description
+     * This method filters the spawn tiles to find those that are available and either assigned to the given agent or unassigned.
+     * It then selects a random tile from the filtered list and returns its coordinates.
+     */
+    randomSpawnTile(me) {
+        let tileArr = Array
+            .from(this.spawnTiles.values())
+            .filter(t => isFinite(this.distance(me, key2Coord(t.coord))))
+            .filter(t => t.available)
+            .filter(t => t.assignedTo === me.id || t.assignedTo === null);
+
+        let tile = tileArr[Math.floor(Math.random() * tileArr.length)];
+        return key2Coord(tile.coord);
+    }
+
+    /**
+     * Calculates distances between all tiles in the map using the Floyd-Warshall algorithm.
+     * @description
+     * This method computes the distance matrix for all valid tiles in the map. It first collects all valid (non-hole) positions,
+     * initializes the distance matrix, and then applies the Floyd-Warshall algorithm to compute the shortest distances between all pairs of tiles.
+     * @throws {Error} If the map size is null.
+     * @returns {void}
+     * @description
+     * This method computes the distance matrix for all valid tiles in the map. It first collects all valid (non-hole) positions,
+     * initializes the distance matrix, and then applies the Floyd-Warshall algorithm to compute the shortest distances between all pairs of tiles.
+     */
+    calculateDistances() {
+        if (this.mapSize === null) {
+            throw new Error("Map size is null");
+        }
+
+        // 1. Collect all valid (non-hole) positions
+        const cells = [];
+        this.indexOf = new Map();
+        for (let x = 0; x &lt; this.mapSize; x++) {
+            for (let y = 0; y &lt; this.mapSize; y++) {
+                const key = coord2Key({ x, y });
+
+                if (this.map.get(key) !== TILE_TYPES.EMPTY) {
+                    const idx = cells.length;
+                    cells.push({ x, y });
+                    this.indexOf.set(key, idx);
+                }
+            }
+        }
+        const N = cells.length;
+
+        // 2. Initialize the distance matrix
+
+        // Build &amp; initialize dist[][] as a plain 2D array
+        this.distMat = Array.from({ length: N }, () => new Array(N).fill(Infinity));
+        for (let i = 0; i &lt; N; i++) {
+            this.distMat[i][i] = 0;
+            const { x, y } = cells[i];
+
+            // only 4 neighbors on a grid
+            for (const { dx, dy } of [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }]) {
+                const nx = x + dx, ny = y + dy;
+                const nKey = coord2Key({ x: nx, y: ny });
+
+                if (this.indexOf.has(nKey)) {
+                    const j = this.indexOf.get(nKey);
+                    this.distMat[i][j] = 1;
+                }
+            }
+        }
+
+        // 3. Run Floyd-Warshall with row-caching and early skips
+        for (let k = 0; k &lt; N; k++) {
+            const rowK = this.distMat[k];
+
+            for (let i = 0; i &lt; N; i++) {
+                const rowI = this.distMat[i];
+                const dik = rowI[k];
+
+                if (dik === Infinity) continue;      // nothing to gain through k from i
+
+                for (let j = 0; j &lt; N; j++) {
+                    const via = dik + rowK[j];
+
+                    if (via &lt; rowI[j]) {
+                        rowI[j] = via;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculates the distance between two coordinates using the precomputed distance matrix.
+     * @param {{x : number, y : number}} from - The starting coordinates.
+     * @param {{x : number, y : number}} to - The destination coordinates.
+     * @returns {number} - The distance between the two coordinates.
+     * @description
+     * This method retrieves the indices of the given coordinates from the indexOf map and uses them to access the distance matrix.
+     * If either coordinate is not found in the indexOf map, it returns Infinity.
+     */
+    distance(from, to) {
+        const fromKey = coord2Key(from);
+        const toKey = coord2Key(to);
+
+        const fromIdx = this.indexOf.get(fromKey);
+        const toIdx = this.indexOf.get(toKey);
+
+        if (fromIdx === undefined || toIdx === undefined) {
+            return Infinity;
+        }
+
+        return this.distMat[fromIdx][toIdx];
+    }
+
+    /**
+     * Finds the nearest base from a given coordinate.
+     * @param {{x : number, y : number}} from - The starting coordinates.
+     * @returns {Array} - An array containing the coordinates of the nearest base and the distance to it.
+     * @description
+     * This method iterates through all bases in the map, calculates the distance from the given coordinates to each base,
+     * and returns the coordinates of the nearest base along with the minimum distance found.
+     */
+    nearestBase(from) {
+        let base;
+        let minDist = Infinity;
+
+        for (const key of this.bases) {
+            let coords = key2Coord(key);
+
+            let distance = this.distance(from, coords);
+
+            if (distance &lt;= minDist) {
+                minDist = distance;
+                base = coords;
+            }
+        }
+
+        return [base, minDist];
+    }
+
+    /**
+     * Calculates the sparseness of spawn tiles based on the server configuration.
+     * @param {ServerConfig} serverConfig - The server configuration containing the maximum number of parcels.
+     * @description
+     * This method calculates the ratio of spawn tiles to the total number of cells in the map that are not empty.
+     * It also calculates the ratio of spawn tiles to the maximum number of parcels allowed in the server configuration.
+     * If both ratios are below the defined thresholds in the config, it sets isSpawnSparse to true.
+     * @returns {void}
+     * @description
+     * This method calculates the ratio of spawn tiles to the total number of cells in the map that are not empty.
+     * It also calculates the ratio of spawn tiles to the maximum number of parcels allowed in the server configuration.
+     * If both ratios are below the defined thresholds in the config, it sets isSpawnSparse to true.
+     */
+    calculateSparseness(serverConfig) {
+        const numCells = Array.from(this.map.values())
+            .filter(type => type > TILE_TYPES.EMPTY)
+            .length;
+        const greenCellRatio = this.spawnTiles.size / numCells;
+        const spawnRatio = this.spawnTiles.size / serverConfig.parcels_max;  // Vogliamo un ratio &lt; 3 (Es. 10 parcels su 30 spawn tiles)
+
+        this.isSpawnSparse = greenCellRatio &lt; config.MAX_GREEN_CELL_RATIO &amp;&amp; spawnRatio &lt; config.MAX_SPAWN_RATIO;
+    }
+
+
+    /**
+     * Performs k-means clustering on spawn tiles to assign them to k prototypes.
+     * @param {number} k - The number of clusters (prototypes).
+     * @param {Array&lt;string>} ids - The IDs of the agents to assign the spawn tiles to.
+     * @param {number} max_iterations - The maximum number of iterations for the k-means algorithm.
+     * @param {number} stab_error - The threshold for stability of prototypes.
+     * @throws {Error} If the length of ids is not equal to k.
+     * @description
+     * This method initializes k prototypes with random values, associates each spawn tile to the nearest prototype using Euclidean distance,
+     * and updates the prototypes to the means of the associated tiles. It continues iterating until the prototypes are stable or the maximum number of iterations is reached.
+    */
+    kMeans(k, ids, max_iterations, stab_error) {
+        if (ids.length !== k) {
+            throw new Error(`Array length must be ${k}, but got ${ids.length}`)
+        }
+
+        // Create k prototypes with random values
+
+
+        // @type {Array &lt; {x: number, y: number} > }
+
+        let prototypes = new Array(k);
+        for (let i = 0; i &lt; k; i++)
+            prototypes[i] = { x: Math.random() * this.mapSize, y: Math.random() * this.mapSize };
+
+        // Array for calculating means
+
+        // @type {Array &lt; {x: number, y: number} > }
+
+        let sums = new Array(k);
+
+        let counts = new Array(k);
+
+        let old_prototypes = [];
+        let bound_reached = false;
+
+        // Loop until prototypes are stable
+        for (let iteration_count = 0; !bound_reached &amp;&amp; iteration_count &lt; max_iterations; iteration_count++) {
+
+            old_prototypes = structuredClone(prototypes);
+
+            // Resetting sums and counts
+            for (let i = 0; i &lt; k; i++)
+                sums[i] = { x: 0, y: 0 };
+            counts.fill(0);
+
+            // Associate each tile to nearest prototype (with Euclidian distance)
+            for (let tile of this.spawnTiles.values()) {
+                let coords = key2Coord(tile.coord);
+
+                let min_distance = Infinity;
+                let assigned_prototype_index = -1;
+
+                for (let p = 0; p &lt; k; p++) {
+                    const prot = prototypes[p];
+
+                    const distance = euclidean_distance(coords, prot);
+
+                    if (distance &lt; min_distance) {
+                        min_distance = distance;
+                        assigned_prototype_index = p;
+                    }
+                }
+
+                tile.assignedTo = ids[assigned_prototype_index];
+
+                sums[assigned_prototype_index].x += coords.x;
+                sums[assigned_prototype_index].y += coords.y;
+                counts[assigned_prototype_index]++;
+            }
+
+
+            // Update values of the prototypes to the means of the associated pixels
+            for (let i = 0; i &lt; k; i++) {
+                if (counts[i] !== 0) {
+                    prototypes[i].x = sums[i].x / counts[i];
+                    prototypes[i].y = sums[i].y / counts[i];
+                }
+            }
+
+            // Calculate differences
+            bound_reached = true;
+
+            for (let i = 0; i &lt; k; i++) {
+                const prot = prototypes[i];
+                const old_prot = old_prototypes[i];
+
+                const distance = euclidean_distance(prot, old_prot);
+
+                if (distance > stab_error) {
+                    bound_reached = false;
+                    break;
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Resets the k-means assignments for all spawn tiles.
+     * @description
+     * This method iterates through all spawn tiles and sets their assignedTo property to null,
+     * effectively resetting the k-means clustering assignments.
+     * @returns {void}
+     */
+    resetKmeans() {
+        for (let tile of this.spawnTiles.values()) {
+            tile.assignedTo = null;
+        }
+    }
+
+
+    /**
+     * Prints all distances between tiles in the map.
+     * @description
+     * This method iterates through all pairs of coordinates in the map and logs the distance between them.
+     * It is useful for debugging and understanding the distance relationships in the map.
+     * @returns {void}
+     */
+    printAllDistances() {
+        for (let i = 0; i &lt; this.mapSize; i++) {
+            for (let j = 0; j &lt; this.mapSize; j++) {
+                console.log(i, ", ", j);
+
+                for (let k = 0; k &lt; this.mapSize; k++) {
+                    for (let h = 0; h &lt; this.mapSize; h++) {
+                        console.log("\t", k, ", ", h, " -> ", this.distance({ x: i, y: j }, { x: k, y: h }));
+                    }
+                }
+            }
+        }
+    }
+
+}
+</code></pre></article></section></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><div class="mobile-nav-links"></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-modules"><div>Modules</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="module-config.html">config</a></div><div class="sidebar-section-children"><a href="module-directions.html">directions</a></div><div class="sidebar-section-children"><a href="module-gameConfig.html">gameConfig</a></div><div class="sidebar-section-children"><a href="module-geometry.html">geometry</a></div><div class="sidebar-section-children"><a href="module-hashMap.html">hashMap</a></div><div class="sidebar-section-children"><a href="module-intentions.html">intentions</a></div><div class="sidebar-section-children"><a href="module-log.html">log</a></div><div class="sidebar-section-children"><a href="module-misc.html">misc</a></div><div class="sidebar-section-children"><a href="module-tile.html">tile</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Agent.html">Agent</a></div><div class="sidebar-section-children"><a href="AgentStore.html">AgentStore</a></div><div class="sidebar-section-children"><a href="Communication.html">Communication</a></div><div class="sidebar-section-children"><a href="DeliverooClient.html">DeliverooClient</a></div><div class="sidebar-section-children"><a href="MapStore.html">MapStore</a></div><div class="sidebar-section-children"><a href="Me.html">Me</a></div><div class="sidebar-section-children"><a href="MultiAgent.html">MultiAgent</a></div><div class="sidebar-section-children"><a href="OpponentAgent.html">OpponentAgent</a></div><div class="sidebar-section-children"><a href="Parcel.html">Parcel</a></div><div class="sidebar-section-children"><a href="ParcelsStore.html">ParcelsStore</a></div><div class="sidebar-section-children"><a href="ServerConfig.html">ServerConfig</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-global"><div>Global</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="global.html#astarSearch">astarSearch</a></div><div class="sidebar-section-children"><a href="global.html#buildExecutor">buildExecutor</a></div><div class="sidebar-section-children"><a href="global.html#checkIfIamAtBase">checkIfIamAtBase</a></div><div class="sidebar-section-children"><a href="global.html#direction">direction</a></div><div class="sidebar-section-children"><a href="global.html#executePlan">executePlan</a></div><div class="sidebar-section-children"><a href="global.html#exitCurrentBase">exitCurrentBase</a></div><div class="sidebar-section-children"><a href="global.html#generateDeliverooDomain">generateDeliverooDomain</a></div><div class="sidebar-section-children"><a href="global.html#generateDeliverooProblem">generateDeliverooProblem</a></div><div class="sidebar-section-children"><a href="global.html#getNearTiles">getNearTiles</a></div><div class="sidebar-section-children"><a href="global.html#getPlan">getPlan</a></div><div class="sidebar-section-children"><a href="global.html#goAway">goAway</a></div><div class="sidebar-section-children"><a href="global.html#initApp">initApp</a></div><div class="sidebar-section-children"><a href="global.html#main">main</a></div><div class="sidebar-section-children"><a href="global.html#mainMulti">mainMulti</a></div><div class="sidebar-section-children"><a href="global.html#mainSinglePDDL">mainSinglePDDL</a></div><div class="sidebar-section-children"><a href="global.html#makeOnDeposit">makeOnDeposit</a></div><div class="sidebar-section-children"><a href="global.html#makeOnMove">makeOnMove</a></div><div class="sidebar-section-children"><a href="global.html#makeOnPickup">makeOnPickup</a></div><div class="sidebar-section-children"><a href="global.html#moveAndWait">moveAndWait</a></div><div class="sidebar-section-children"><a href="global.html#moveToNearestBase">moveToNearestBase</a></div><div class="sidebar-section-children"><a href="global.html#planWithDynamicAgents">planWithDynamicAgents</a></div><div class="sidebar-section-children"><a href="global.html#randomMoveAndBack">randomMoveAndBack</a></div><div class="sidebar-section-children"><a href="global.html#registerEventHandlers">registerEventHandlers</a></div><div class="sidebar-section-children"><a href="global.html#runPlanningLoop">runPlanningLoop</a></div><div class="sidebar-section-children"><a href="global.html#sanitizePddlName">sanitizePddlName</a></div><div class="sidebar-section-children"><a href="global.html#smartMove">smartMove</a></div><div class="sidebar-section-children"><a href="global.html#smartMoveToNearestBase">smartMoveToNearestBase</a></div><div class="sidebar-section-children"><a href="global.html#smartMoveToNearestBaseAndPutDown">smartMoveToNearestBaseAndPutDown</a></div><div class="sidebar-section-children"><a href="global.html#waitForAppReady">waitForAppReady</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>
