@@ -6,6 +6,6 @@
     "recurse": true
   },
   "source": {
-    "include": ["src"]
+    "include": ["src", "config.js"]
   }
 }

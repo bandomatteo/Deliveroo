@@ -1,6 +1,6 @@
 
 <p align="center">
-<img src="img/logo.png" alt="Alt Text" width="300" height="300">
+<img src="https://raw.githubusercontent.com/bandomatteo/Deliveroo/refs/heads/dev/img/logo.png" alt="Alt Text" width="300" height="300">
 </p>
 
 # 🚀 Deliveroo
@@ -47,7 +47,7 @@ npm run start-single-pddl
 
 ## 📄  Documentation
 
-The documentation is available here: [Documentation](https://linktodocumentation)
+The documentation is available here: [Documentation](https://bandomatteo.github.io/Deliveroo/)
 
 Or if you want to generate the documentation by yourself:
 ```bash
