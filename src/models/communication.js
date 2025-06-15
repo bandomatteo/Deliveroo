@@ -28,9 +28,9 @@ export class Communication {
         this.droppedValue = 0;
         this.droppedQuantity = 0;
         this.agentToPickup = null;
-        /**
-         * @type {{x : number, y : number}}
-         */
+        
+         // @type {{x : number, y : number}}
+         
         this.droppedCoord = { x: undefined, y: undefined };
         this.droppedBaseDistance = null;
     }

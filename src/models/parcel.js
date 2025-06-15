@@ -24,9 +24,9 @@ export class Parcel {
         this.lastSeen = frame;
         this.existingProb = 1;
 
-        /**
-         * @type {{x : number, y : number}}
-         */
+        
+         // @type {{x : number, y : number}}
+         
         this.nearestBase = null;
 
         if (!this.carriedBy) {

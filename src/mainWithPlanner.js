@@ -320,11 +320,13 @@ async function runPlanningLoop(context) {
 /**
  * Main function to initialize the application and start the planning loop.
  * @returns {Promise<void>} - A promise that resolves when the application is fully initialized and the planning loop is running.
+ * @function mainSinglePDDL
+ * @async
  * @description
  * This function initializes the application by creating instances of necessary classes, registers event handlers,
  * waits for the application to be ready, and then starts the main planning loop.
  * It serves as the entry point for the application, ensuring that all components are set up correctly before starting the main logic.
- * * @throws {Error} - Throws an error if the application initialization or planning loop fails.
+ * @throws {Error} - Throws an error if the application initialization or planning loop fails.
  */
 async function main() {
   console.log("Initializing application…");
