@@ -8,7 +8,7 @@ import config from '../utils/gameConfig.js';
 
 /**
  * MapStore class to store the game map and its tiles
- * @class MapStore
+ * @class 
  * @description
  * This class is responsible for managing the game map, including adding tiles, calculating distances,
  * and handling spawn tiles. It provides methods to add tiles, set their types, calculate distances,
@@ -293,17 +293,17 @@ export class MapStore {
 
         // Create k prototypes with random values
 
-        /**
-         * @type {Array < {x: number, y: number} > }
-         */
+        
+        // @type {Array < {x: number, y: number} > }
+         
         let prototypes = new Array(k);
         for (let i = 0; i < k; i++)
             prototypes[i] = {x : Math.random() * this.mapSize, y : Math.random() * this.mapSize};
 
         // Array for calculating means
-        /**
-         * @type {Array < {x: number, y: number} > }
-         */
+        
+        // @type {Array < {x: number, y: number} > }
+         
         let sums = new Array(k);
 
         let counts = new Array(k);

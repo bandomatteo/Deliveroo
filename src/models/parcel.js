@@ -5,7 +5,7 @@ import config from "../utils/gameConfig.js"
 
 /**
  * Parcel class to represent a parcel in the game
- * @class Parcel
+ * @class
  * @description
  * This class is used to represent a parcel in the game.
  * It contains properties such as id, carriedBy, x, y, reward, baseDistance, lastSeen, existingProb, nearestBase,

@@ -1,7 +1,7 @@
 
 /**
  * ServerConfig class to manage server configuration settings.
- * @class ServerConfig
+ * @class 
  * @description
  * This class is used to manage the server configuration settings for the game.
  * It includes properties such as parcels_max, parcel_reward_avg, parcels_decaying_interval, clock,

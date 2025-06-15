@@ -8,7 +8,10 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate-docs": "jsdoc --configure jsdoc.json --verbose"
+    "generate-docs": "jsdoc --configure jsdoc.json --verbose",
+    "start-single": "node src/main.js",
+    "start-multi": "node src/mainMulti.js",
+    "start-single-pddl": "node src/mainWithPlanner.js"
   },
   "author": "Marco",
   "license": "ISC",
