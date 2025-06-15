@@ -1,0 +1,11 @@
+{
+  "opts": {
+    "template": "node_modules/clean-jsdoc-theme",
+    "readme": "README.md",
+    "destination": "./docs",
+    "recurse": true
+  },
+  "source": {
+    "include": ["src", "config.js"]
+  }
+}

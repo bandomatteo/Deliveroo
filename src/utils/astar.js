@@ -3,12 +3,16 @@ import { distance } from "../utils/geometry.js";
 import { MapStore } from "../models/mapStore.js";
 
 /**
- * Returns path from start to goal using A* on known map
- * @param {{x: number, y: number}} start
- * @param {{x: number, y: number}} goal
- * @param {MapStore} mapStore
- * @returns {Array<{x: number, y: number}>}
- */
+  * A* search algorithm to find the shortest path from start to goal on a grid.
+  * @param {{x: number, y: number}} start - Starting coordinates
+  * @param {{x: number, y: number}} goal - Goal coordinates
+  * @param {MapStore} mapStore - The MapStore instance containing the grid and obstacles
+  * @description
+  * This function implements the A* search algorithm to find the shortest path from start to goal.
+  * It uses a heuristic based on the Manhattan distance to prioritize nodes in the search.
+  * The function returns an array of coordinates representing the path from start to goal.
+  * If no path is found, it returns an empty array.
+  */
 export function astarSearch(start, goal, mapStore) {
   const startKey = coord2Key(start);
   const goalKey = coord2Key(goal);
@@ -69,11 +73,12 @@ export function astarSearch(start, goal, mapStore) {
   return [];
 }
 
+
 /**
- * Determines direction between two adjacent tiles.
- * @param {{x: number, y: number}} from
- * @param {{x: number, y: number}} to
- * @returns {'up'|'down'|'left'|'right'|null}
+ * Determine the direction from one coordinate to another.
+ * @param {{x: number, y: number}} from - Starting coordinates
+ * @param {{x: number, y: number}} to - Target coordinates
+ * @returns {string|null} - Returns 'right', 'left', 'up', 'down' or null if coordinates are the same
  */
 export function direction(from, to) {
   if (to.x > from.x) return 'right';

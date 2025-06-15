@@ -1,14 +1,21 @@
 
 /**
- * Model of the player.
- * 
- * @property {string} id - Player ID
- * @property {string} name - Player name
- * @property {number} x - Player X coordinate
- * @property {number} y - Player Y coordinate
- * @property {number} score - Player score
+ * Represents the local player in the game.
+ * @class 
+ * @description
+ * This class holds the state of the local player, including their ID, team information, position, score, and penalty.
+ * It provides a method to update the player's state based on server payload and time.
+ * * @property {string|null} id - The unique identifier of the player.
+ * @property {string|null} teamId - The ID of the team the player belongs to.
+ * @property {string|null} teamName - The name of the team the player belongs to.
+ * @property {string|null} name - The name of the player.
+ * @property {number|null} x - The x-coordinate of the player's position.
+ * @property {number|null} y - The y-coordinate of the player's position.
+ * @property {number|null} score - The current score of the player.
+ * @property {number|null} penalty - The current penalty of the player.
+ * @property {number|null} ms - The timestamp in milliseconds when the player's state was last updated.
+ * @property {number|null} frame - The frame number when the player's state was last updated.
  */
-
 export class Me {
   constructor() {
     this.id = null;
@@ -25,9 +32,12 @@ export class Me {
   }
 
   /**
-   * Update own state from server payload.
-   * @param {{id:string, name:string, teamId: string, teamName: string, x:number, y:number, score:number, penalty:number}} payload
-   * @param {{ms: number, frame: number}} time
+   * Updates the player's state based on the provided payload and time.
+   * @param {Object} payload - The data received from the server containing player information.
+   * @param {Object} time - An object containing the current time in milliseconds and frame number.
+   * @description
+   * This method updates the player's ID, name, team information, position, score, and penalty,
+   * as well as the timestamp and frame number for the current state.
    */
   update(payload, time) {
     this.id    = payload.id;
