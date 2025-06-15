@@ -6,16 +6,14 @@ import { ServerConfig } from "./serverConfig.js";
 
 /**
  * ParcelsStore class to manage parcels in the game
- * @class ParcelsStore
+ * @class 
  * @description
  * This class is responsible for managing parcels in the game.
  * It allows adding, removing, and updating parcels, as well as retrieving available parcels and those carried by players.
  */
 export class ParcelsStore {
     constructor() {
-      /** 
-       * @type {Map <string, Parcel>}
-       */
+      
       this.map = new Map();
     }
   

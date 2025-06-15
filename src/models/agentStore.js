@@ -6,7 +6,7 @@ import { ServerConfig } from "./serverConfig.js";
 
 /**
  * AgentStore class to store agents in the game
- * @class AgentStore
+ * @class 
  * @description
  * This class is responsible for managing the agents in the game.
  * It allows adding, removing, and updating agents, as well as finding visible agents based on the player's position and the game configuration.

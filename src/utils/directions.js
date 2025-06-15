@@ -1,11 +1,16 @@
 /**
- * @module DIRECTIONS
+ * @module directions
  * @description
- * This module provides utility functions for handling directions in a grid-based game.
- * It defines a set of constants for directions and includes a function to get the opposite direction.
- * The directions are represented as strings, and the module includes a function to determine the opposite direction
- * based on the input direction.    
- */
+ * This module exports constants and functions related to movement directions in the game.
+ * It defines the possible directions and provides a function to get the opposite direction.
+ * @property {Object} DIRECTIONS - An object containing constants for each direction.
+ * @property {string} DIRECTIONS.NONE - Represents no direction.
+ * @property {string} DIRECTIONS.UP - Represents the upward direction.
+ * @property {string} DIRECTIONS.DOWN - Represents the downward direction.
+ * @property {string} DIRECTIONS.LEFT - Represents the leftward direction.
+ * @property {string} DIRECTIONS.RIGHT - Represents the rightward direction.
+ * */
+
 export const DIRECTIONS = {
     NONE:  null,
     UP: "up",

@@ -2,7 +2,7 @@ import { MapStore } from "./mapStore.js";
 
 /**
  * Communication class to handle game communication
- * @class Communication
+ * @class 
  * @description
  * This class is responsible for managing the communication related to parcel dropping and picking up.
  * It allows setting the dropped parcel's position, value, quantity, and the agent responsible for picking it up.

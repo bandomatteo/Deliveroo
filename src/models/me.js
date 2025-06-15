@@ -1,7 +1,7 @@
 
 /**
  * Represents the local player in the game.
- * @class Me
+ * @class 
  * @description
  * This class holds the state of the local player, including their ID, team information, position, score, and penalty.
  * It provides a method to update the player's state based on server payload and time.

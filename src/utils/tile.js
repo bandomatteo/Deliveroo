@@ -6,6 +6,11 @@
  * Each tile type is represented by a unique integer value.
  * These constants are used to identify the nature of each tile in the game world,
  * allowing for efficient game logic and rendering.
+ * @property {Object} TILE_TYPES - An object containing constants for each tile type.
+ * @property {number} TILE_TYPES.EMPTY - Represents an empty tile.
+ * @property {number} TILE_TYPES.SPAWN - Represents a spawn tile.
+ * @property {number} TILE_TYPES.BASE - Represents a base tile.
+ * @property {number} TILE_TYPES.WALKABLE - Represents a walkable tile.
  */
 export const TILE_TYPES = {
     EMPTY : 0,
