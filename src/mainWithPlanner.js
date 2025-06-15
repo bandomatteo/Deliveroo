@@ -7,7 +7,7 @@ import { MapStore } from "./models/mapStore.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
 import { getPlan, executePlan } from "./PDDL/planner.js";
-import { moveAndWait, exitCurrentBase, moveToNearestBase } from "./actions/movement.js";
+import { moveAndWait, moveToNearestBase, easyExplore } from "./actions/movement.js";
 import { direction } from "./utils/astar.js";
 import { TILE_TYPES } from "./utils/tile.js";
 import { coord2Key, key2Coord } from "./utils/hashMap.js";
@@ -290,7 +290,7 @@ async function runPlanningLoop(context) {
         console.log("No plan found, moving toward nearest base");
         try {
           if (checkIfIamAtBase(me, mapStore)) {
-            await exitCurrentBase(client, me, mapStore);
+            await easyExplore(client, me, mapStore);
           } else {
             await moveToNearestBase(client, me, mapStore);
           }
