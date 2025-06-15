@@ -22,7 +22,7 @@ function buildExecutor(onMove, onPickup, onDeposit) {
   // Signature: executor(agent, fromTile, toTile) <--- like in the PDDL domain
   executor.addAction({
     name: "MOVE",  //we used move in the ppddl domain, but it wants MOVE here :/
-    // 3 params cuz the PDDL domain has 3 params
+    // 3 params bacause the PDDL domain has 3 params
     executor: (agent, fromTile, toTile) => {
       // Example values:
       // agent    = "AGENT_0D4EA4"
@@ -47,7 +47,6 @@ function buildExecutor(onMove, onPickup, onDeposit) {
       // parcel = "P13324"
       // atTile = "T_0_6"
 
-      // Simply invoke onPickup
       return onPickup(); // must return a Promise
     },
   });
@@ -86,7 +85,6 @@ function buildExecutor(onMove, onPickup, onDeposit) {
 export async function getPlan(mapStore, parcelsStore, me, serverConfig) {
   const domainText = generateDeliverooDomain();
   const problemText = generateDeliverooProblem(mapStore, parcelsStore, me, serverConfig);
-  //console.log("PDDL Domain:\n", domainText);
 
   const rawPlan = await onlineSolver(domainText, problemText);
 

@@ -83,8 +83,6 @@ export class Agent {
 
     // Log section
     this.logLevels = [];
-    // this.logLevels.push(LOG_LEVELS.MASTER);
-    // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
 
@@ -100,7 +98,7 @@ export class Agent {
    * @example
    * agent.log(LOG_LEVELS.MASTER, "This is a master log message");
    * @example
-   * agent.log(LOG_LEVELS.ACTION, "This is an action log message", { someData: 123 });
+   * agent.log(LOG_LEVELS.ACTION, "This is an action log message", { somjeData: 123 });
    */
   log(logLevel, ...args) {
     log(this.logLevels, logLevel, ...args);

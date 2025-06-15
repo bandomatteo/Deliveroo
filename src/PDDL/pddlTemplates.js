@@ -1,4 +1,4 @@
-import { isWalkableTile, TILE_TYPES } from "../utils/tile.js"; 
+import { isWalkableTile, TILE_TYPES } from "../utils/tile.js";
 
 
 /**
@@ -128,7 +128,7 @@ export function generateDeliverooDomain() {
   )
  */
 export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfig) {
-  
+
   // Helper functions to create names for tiles, bases, and parcels
   function tileNameFromCoordinates(coordinates) {
     const [x, y] = coordinates.split(","); // coordinates torna tipo "3,5" or "7,2"
@@ -146,15 +146,12 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
     return sanitizePddlName(`${p.id}`);
   }
 
-   // get all walkable tiles (type != EMPTY)
+  // get all walkable tiles (type != EMPTY)
   const walkableTiles = [];
-  // mapStore.map.entries() returns an iterator of [key, value] pairs where coordinates is a string like "3,5" and value is a TILE_TYPE
+
 
   for (const [coordinates, tileType] of mapStore.map.entries()) {
-    
-    //console.log(`Tile at ${coordinates} is of type ${tileType}`);
-    
-    //tileType !== TILE_TYPES.EMPTY
+
     if (isWalkableTile(tileType)) {
       const [x, y] = coordinates.split(",").map(Number);
       //console.log(`Adding walkable tile: ${coordKey} (${xs}, ${ys})`);
@@ -215,8 +212,8 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
   const agentTile = sanitizePddlName(`t_${Math.round(me.x)}_${Math.round(me.y)}`);
   const atAgentFact = `(at ${agentPDDL} ${agentTile})`;
 
-  //building the “:objects” section 
-  const allTileNames = walkableTiles.map((t) => tileNameFromCoordinates(t.coordinates)); 
+  // building the “:objects” section 
+  const allTileNames = walkableTiles.map((t) => tileNameFromCoordinates(t.coordinates));
   const objectsSection = `
   (:objects
     ${agentPDDL}                       - agent
@@ -239,7 +236,7 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
   )
   `.trim();
 
-  //building the “:goal” section: deliver every known parcel 
+  // building the “:goal” section: deliver every known parcel 
   const deliveredGoals = parcelObjects.map((pid) => `(delivered ${pid})`);
   const goalSection = `
   (:goal (and
@@ -247,7 +244,7 @@ export function generateDeliverooProblem(mapStore, parcelsStore, me, serverConfi
   ))
   `.trim();
 
-  //combine into a full PDDL problem 
+  // combine into a full PDDL problem 
   const problemName = sanitizePddlName(`deliveroo_problem`);
   const pddl = `
 (define (problem ${problemName})

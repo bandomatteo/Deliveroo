@@ -102,9 +102,6 @@ export class MultiAgent {
 
     // Log section
     this.logLevels = [];
-    // this.logLevels.push(LOG_LEVELS.MASTER);
-    // this.logLevels.push(LOG_LEVELS.SLAVE);
-    // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
 
