@@ -2,11 +2,8 @@ import DeliverooClient from "./api/deliverooClient.js";
 import { Me }          from "./models/me.js";
 import { ParcelsStore }from "./models/parcelsStore.js";
 import { MapStore }    from "./models/mapStore.js";
-import { MultiAgent }       from "./agent/agentMulti.js";
 import { AgentStore } from "./models/agentStore.js";
 import { ServerConfig } from "./models/serverConfig.js";
-import { Communication } from "./models/communication.js";
-import config from './utils/gameConfig.js';
 import { Agent } from "./agent/agent.js";
 
 /**
@@ -84,4 +81,4 @@ async function main() {
   }
 }
 
-main()
+main();

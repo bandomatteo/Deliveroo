@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//TODO: Not very elegant, FIXME
 const possiblePaths = [
   path.resolve(process.cwd(), '.env'),                  
   path.resolve(process.cwd(), 'src/agent/.env'),        

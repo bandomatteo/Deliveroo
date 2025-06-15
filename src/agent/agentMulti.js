@@ -1,4 +1,4 @@
-import { moveAndWait, randomMoveAndBack, goAway, getNearTiles } from "../actions/movement.js";
+import { moveAndWait, goAway, getNearTiles } from "../actions/movement.js";
 import DeliverooClient from "../api/deliverooClient.js";
 import { MapStore } from "../models/mapStore.js";
 import { Me } from "../models/me.js";
