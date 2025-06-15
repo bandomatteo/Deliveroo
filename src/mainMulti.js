@@ -9,6 +9,13 @@ import { Communication } from "./models/communication.js";
 import config from './utils/gameConfig.js';
 
 
+/**
+ * Main function to initialize the Deliveroo client, models, and agents.
+ * It sets up event listeners for client events and runs the agents' decision-making loop.
+ * The agents update their beliefs, generate desires, filter intentions, and act based on the current state of the game.
+ * The loop continues until the game is terminated, allowing the agents to continuously adapt to the game environment.
+ * @async
+ */
 async function main() {
   console.log("Creating clients...");
   const client1   = new DeliverooClient(true);   //true for master, false for slave
@@ -29,12 +36,10 @@ async function main() {
   const agent2 = new MultiAgent(client2, me2, me1, parcels, mapStore, agentStore, communication, serverConfig, false);
 
   client1.onYou((payload, time) => {
-    //console.log("Master received onYou:", payload);
     me1.update(payload, time);
   });
   
   client2.onYou((payload, time) => {
-    //console.log("Slave received onYou:", payload);
     me2.update(payload, time);
   });
 
@@ -52,20 +57,17 @@ async function main() {
     tiles.forEach(t =>
       mapStore.addTile({ x: t.x, y: t.y, type: t.type })
     );
-   // console.log(`Master Map loaded (${tiles.length} tiles)`);
     mapStore.calculateDistances();
     mapStore.calculateSparseness(serverConfig);
   });
 
   client1.onParcelsSensing(pp => {
-    //console.log("Master received parcels, mapSize:", mapStore.mapSize);
     if (mapStore.mapSize > 0) {
       parcels.updateAll(me1, pp, mapStore, serverConfig);
     }
   });
 
   client2.onParcelsSensing(pp => {
-    //console.log("Slave received parcels, mapSize:", mapStore.mapSize);
     if (mapStore.mapSize > 0) {
       parcels.updateAll(me2, pp, mapStore, serverConfig); 
     }
@@ -121,19 +123,14 @@ async function main() {
   while (true) {
     await new Promise(r => setTimeout(r, serverConfig.clock));
     
-    // Debug
-    //console.log(`Master: id=${me.id}, isMoving=${agent.isMoving}`);
-    // console.log(`Slave: id=${meSlave.id}, isMoving=${agentSlave.isMoving}`);
-    //console.log(`MapStore size: ${mapStore.mapSize}`);
     
-    // Verifica che entrambi siano pronti e la mappa caricata
+    // Check if both agents are ready and the map is loaded
     const idLoaded = me1.id && me2.id && mapStore.mapSize > 0;
 
     const masterReady = idLoaded && !agent1.isMoving;
     const slaveReady = idLoaded && !agent2.isMoving;
     
     if (!idLoaded) {
-      //console.log("Waiting for agents to be ready...");
       continue;
     }
 
@@ -142,11 +139,10 @@ async function main() {
       firstLoad();
     }
     
-    // Fai agire entrambi in parallelo
+    // Parallel execution of both agents
     const promises = [];
     
     if (masterReady) {
-      //console.log("Master is acting...");
       agent1.updateBeliefs();
       agent1.generateDesires();
       agent1.filterIntentions();
@@ -154,7 +150,6 @@ async function main() {
     }
     
     if (slaveReady) {
-      //console.log("Slave is acting...");
       agent2.updateBeliefs();
       agent2.generateDesires();
       agent2.filterIntentions();
@@ -162,7 +157,6 @@ async function main() {
     }
     
     await Promise.all(promises);
-    //console.log("Cycle completed");
   }
 }
 

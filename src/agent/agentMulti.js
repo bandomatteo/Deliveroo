@@ -17,17 +17,53 @@ import { getPickupScore } from "../utils/misc.js";
 import config from "../utils/gameConfig.js";
 import gameConfig from "../utils/gameConfig.js";
 
+/**
+ * MultiAgent class for managing multi-agent interactions in the Deliveroo game.
+ * It handles desires, intentions, and actions of agents, including pathfinding and communication.
+ * It supports both master and slave agents, allowing them to coordinate actions and share information.
+ * The class implements a BDI (Belief-Desire-Intention) architecture to manage agent behavior.
+ * It includes methods for generating desires, filtering intentions, and executing actions based on the current state of the game.
+ * The agent can perform actions such as picking up parcels, depositing them, exploring the map, and avoiding collisions with other agents.
+ * It also manages the agent's state, including movement, camping, and collision detection.
+ * The class is designed to be extensible, allowing for the addition of new intentions and actions as needed.
+ * @class MultiAgent
+ * @param {DeliverooClient} client - The client instance for API communication.
+ * @param {Me} me - The agent's own state.
+ * @param {Me} mate - The mate agent's state (for master agents, this is the slave agent).
+ * @param {ParcelsStore} parcels - The store for managing parcels.
+ * @param {MapStore} mapStore - The store for managing the game map.
+ * @param {AgentStore} agentStore - The store for managing agents.
+ * @param {Communication} communication - The communication model for the agent.
+ * @param {ServerConfig} serverConfig - The server configuration for the game.
+ * @param {boolean} isMaster - Flag to check if the agent is a master agent.
+ * @property {DeliverooClient} client - The client instance for API communication.
+ * @description
+ * The MultiAgent class implements a BDI architecture to manage agent behavior in the Deliveroo game.
+ * It allows agents to generate desires based on the current state of the game, filter those desires into intentions, and execute actions accordingly.
+ * The class supports both master and slave agents, enabling them to coordinate actions and share information.
+ * It includes methods for pathfinding, collision detection, and managing the agent's state, such as movement, camping, and exploring the map.
+ * The agent can perform actions such as picking up parcels, depositing them, exploring the map, and avoiding collisions with other agents.
+ * The class is designed to be extensible, allowing for the addition of new intentions and actions as needed.
+ * It also includes logging functionality to track agent actions and intentions
+ */
 export class MultiAgent {
   /**
-   * @param {DeliverooClient} client
-   * @param {Me}              me
-   * @param {Me}             mate
-   * @param {ParcelsStore}    parcels
-   * @param {MapStore}        mapStore
-   * @param {AgentStore}      agentStore
-   * @param {Communication}   communication
-   * @param {ServerConfig}    serverConfig
-   * @param {boolean}         isMaster - Flag to check if it's a master agent
+   * Creates an instance of MultiAgent.
+   * @param {DeliverooClient} client - The client instance for API communication.
+   * @param {Me} me - The agent's own state.
+   * @param {Me} mate - The mate agent's state (for master agents, this is the slave agent).
+   * @param {ParcelsStore} parcels - The store for managing parcels.
+   * @param {MapStore} mapStore - The store for managing the game map.
+   * @param {AgentStore} agentStore - The store for managing agents.
+   * @param {Communication} communication - The communication model for the agent.
+   * @param {ServerConfig} serverConfig - The server configuration for the game.
+   * @param {boolean} isMaster - Flag to check if the agent is a master agent.
+   * @description
+   * The constructor initializes the MultiAgent instance with the provided parameters.
+   * It sets up the agent's state, including desires, intentions, pathfinding variables, and timers for exploring and camping.
+   * It also initializes logging levels for tracking agent actions and intentions.
+   * The agent's communication model is set up to allow for interaction with other agents and the game server.
+   * The constructor prepares the agent to perform actions based on its beliefs, desires, and intentions.
    */
   constructor(client, me, mate, parcels, mapStore, agentStore, communication, serverConfig, isMaster) {
     this.client = client;
@@ -66,17 +102,41 @@ export class MultiAgent {
 
     // Log section
     this.logLevels = [];
-    // this.logLevels.push(LOG_LEVELS.MASTER);
-    // this.logLevels.push(LOG_LEVELS.SLAVE);
-    // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
 
+  /**
+   * Logs messages based on the log level.
+   * @param {string} logLevel - The log level to filter messages.
+   * @param {...any} args - The messages to log.
+   * @description
+   * This method logs messages to the console based on the specified log level.
+   * It uses the `log` utility function to filter and format the messages according to the log levels defined in the class.
+   * The log levels can include master, slave, and action logs, allowing for flexible logging of agent actions and intentions.
+   * @example
+   * // Log a master level message
+   * agent.log(LOG_LEVELS.MASTER, "This is a master level message");
+   * @example
+   * // Log a slave level message
+   * agent.log(LOG_LEVELS.SLAVE, "This is a slave level message");
+   */
   log(logLevel, ...args) {
     log(this.logLevels, logLevel, ...args);
   }
 
 
+  /**
+   * Updates the agent's beliefs based on the current state of the game.
+   * It calculates the frame difference and updates the parcels data accordingly.
+   * @description
+   * This method is called to update the agent's beliefs about the game state.
+   * It calculates the time difference since the last update and uses it to update the parcels data.
+   * The parcels data is updated based on the current frame and the server configuration.
+   * This method is essential for keeping the agent's beliefs up-to-date, allowing it to make informed decisions based on the latest game state.
+   * @example
+   * // Update the agent's beliefs
+   * agent.updateBeliefs();
+   */
   updateBeliefs() {
     // Get frame difference
     if (this.oldTime === null) {
@@ -89,10 +149,22 @@ export class MultiAgent {
     this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size, this.serverConfig);
   }
 
-  /**
-    * Filter options into current desires based on state:
-    * Generate all possible desires (pickup and deposit) and let the agent choose the best one
-    */
+/**
+  * Generates desires based on the current state of the game.
+  * It considers the agent's carried parcels, the distance to the nearest base, and the presence of other agents.
+  * It calculates potential rewards for picking up parcels and decides on actions such as picking up, depositing, or exploring.
+  * @description
+  * This method is responsible for generating the agent's desires based on the current game state.
+  * It evaluates the agent's carried parcels, calculates potential rewards for picking up new parcels, and considers the distance to the nearest base.
+  * It also checks for the presence of other agents and their actions, allowing the agent to make informed decisions about its next actions.
+  * The desires are sorted by score, with higher scores indicating more desirable actions.
+  * The method also handles special cases, such as dropping parcels when close to a mate agent or moving away if another agent is stuck.
+  * The generated desires are stored in the `this.desires` array, which is later filtered to create intentions for the agent to act upon.
+  * @example
+  * // Generate desires based on the current game state
+  * agent.generateDesires();
+  * @returns {void}
+ */
   generateDesires() {
     this.desires = [];
   
@@ -189,12 +261,34 @@ export class MultiAgent {
     this.desires.push({ type: INTENTIONS.EXPLORE, score: 0.0001 });
   }
 
-
+/**
+ * Filters the desires into intentions based on their scores.
+ * It sorts the desires in descending order of score and updates the intentions array.
+ * @description
+ * This method filters the agent's desires into intentions by sorting them based on their scores.
+ * It ensures that the most desirable actions are prioritized for execution.
+ * The intentions are sorted in descending order, with higher scores indicating more desirable actions.
+ * The filtered intentions are stored in the `this.intentions` array, which is later used to determine the agent's actions.
+ * @example
+ * // Filter the desires into intentions
+ * agent.filterIntentions();
+ * @returns {void}
+ */
   filterIntentions() {
     this.intentions = this.desires.sort((a, b) => { return b.score - a.score });
   }
 
-
+/**
+ * Executes the agent's actions based on the current intentions.
+ * It iterates through the intentions and performs actions such as picking up parcels, depositing them, exploring, or moving away.
+ * It checks for conditions such as whether the intention is equal to the last intention and handles agent collisions.
+ * @description
+ * This method is responsible for executing the agent's actions based on its current intentions.
+ * It iterates through the intentions and performs actions such as picking up parcels, depositing them, exploring the map, or moving away from other agents.
+ * It checks for conditions such as whether the current intention is equal to the last intention and handles agent collisions.
+ * The method uses helper methods to achieve specific actions, such as `achievePickup`, `achieveDeposit`, `achieveDropAndGoAway`, `achieveGoAway`, and `achieveExplore`.
+ * The agent's actions are performed in a sequential manner, ensuring that it follows its intentions and updates its state accordingly.
+ */
   async act() {
     for (let intentionIndex = 0; intentionIndex < this.intentions.length; intentionIndex++) {
 
@@ -256,6 +350,20 @@ export class MultiAgent {
     }
   }
 
+/**
+ * Achieves the pickup action by moving towards the parcel and picking it up.
+ * It checks if the intention is equal to the last intention and handles the pickup accordingly.
+ * @param {Object} p - The parcel to be picked up.
+ * @param {boolean} isEqualToLastIntention - Flag to check if the intention is equal to the last intention.
+ * @param {boolean} isFromDropped - Flag to check if the pickup is from a dropped parcel.
+ * @description
+ * This method is responsible for achieving the pickup action by moving towards the specified parcel and picking it up.
+ * It checks if the current intention is equal to the last intention and updates the path accordingly.
+ * If the agent is already at the parcel's location, it emits a pickup event to the server.
+ * If the pickup is from a dropped parcel, it resets the drop communication.
+ * The method uses the `oneStepCheckAgents` method to check for collisions with other agents before performing the pickup action.
+ * The agent's state is updated to reflect the pickup action, and it logs the action based on whether it is a master or slave agent.
+ */
   async achievePickup(p, isEqualToLastIntention, isFromDropped) {
     
     if (this.isMaster) {
@@ -281,6 +389,17 @@ export class MultiAgent {
     }
   }
 
+  /**
+   * Achieves the deposit action by moving to the nearest base and depositing carried parcels.
+   * It checks if the intention is equal to the last intention and handles the deposit accordingly.
+   * @param {boolean} isEqualToLastIntention - Flag to check if the intention is equal to the last intention.
+   * @description
+   * This method is responsible for achieving the deposit action by moving to the nearest base and depositing the carried parcels.
+   * It checks if the current intention is equal to the last intention and updates the path to the nearest base accordingly.
+   * If the agent is already at the base's location, it emits a putdown event to the server.
+   * The method uses the `oneStepCheckAgents` method to check for collisions with other agents before performing the deposit action.
+   * The agent's state is updated to reflect the deposit action, and it logs the action based on whether it is a master or slave agent.
+   */
   async achieveDeposit(isEqualToLastIntention) {
     if (this.isMaster) {
       this.log(LOG_LEVELS.MASTER, "GO_DEPOSIT");}
@@ -306,6 +425,15 @@ export class MultiAgent {
     }
   }
 
+  /**
+   * Achieves the drop and go away action by dropping carried parcels and moving away.
+   * It checks if there are possible moves and handles the drop and go away action accordingly.
+   * @description
+   * This method is responsible for achieving the drop and go away action by dropping the carried parcels and moving away from the current location.
+   * It checks if there are possible moves available and, if so, sets the dropped state, puts down the parcels, and moves away.
+   * If there are no possible moves, it communicates with the mate agent to move away.
+   * The method updates the agent's state to reflect the drop and go away action, and it logs the action based on whether it is a master or slave agent.
+   */
   async achieveDropAndGoAway() {
     const myParcels = this.parcels.carried(this.me.id);
     const carried_value = myParcels.reduce((sum, parcel) => sum + parcel.reward, 0);
@@ -331,6 +459,15 @@ export class MultiAgent {
     this.isMoving = false;
   }
 
+  /**
+   * Achieves the go away action by moving away from the current location.
+   * It checks if there are possible moves and handles the go away action accordingly.
+   * @description
+   * This method is responsible for achieving the go away action by moving away from the current location.
+   * It checks if there are possible moves available and, if so, moves away from the current location.
+   * If there are no possible moves, it communicates with the mate agent to move away.
+   * The method updates the agent's state to reflect the go away action, and it logs the action based on whether it is a master or slave agent.
+   */
   async achieveGoAway() {
     this.isMoving = true;
     await goAway(this.client, this.me, this.mate, this.mapStore);
@@ -338,6 +475,17 @@ export class MultiAgent {
     this.communication.moveAwayAgentId = null;
   }
 
+  /**
+   * Achieves the explore action by moving to a random spawn tile or camping on the spawn.
+   * It checks if the intention is equal to the last intention and handles the explore action accordingly.
+   * @param {boolean} isEqualToLastIntention - Flag to check if the intention is equal to the last intention.
+   * @description
+   * This method is responsible for achieving the explore action by moving to a random spawn tile or camping on the spawn.
+   * It checks if the current intention is equal to the last intention and updates the path to a random spawn tile accordingly.
+   * If the agent is camping, it saves the camping start time and checks if the camping time has expired.
+   * If the agent is not camping, it moves to a random spawn tile and checks for collisions with other agents.
+   * The method updates the agent's state to reflect the explore action, and it logs the action based on whether it is a master or slave agent.
+   */
   async achieveExplore(isEqualToLastIntention) {
     if (this.isMaster === true) {
       this.log(LOG_LEVELS.MASTER, "EXPLORE");
@@ -379,10 +527,21 @@ export class MultiAgent {
     }
   }
 
-  /**
-   * Performs one step of the agent path, checking if there are collision with other agents
-   * @param {{x : number, y : number}} newPathTile
-   */
+/**
+ * Performs a one-step check for agents in the next tile of the path.
+ * It checks if any agent is in the tile the agent wants to go to and handles collisions accordingly.
+ * If a collision is detected, it sets the colliding state and starts a timer.
+ * If the timer expires, it gets a new path or base path based on the last intention.
+ * If everything is clear, it performs one step of the agent path.
+ * @param {{x : number, y : number}} newPathTile - The new path tile to check for agents.
+ * @description
+ * This method performs a one-step check for agents in the next tile of the path.
+ * It checks if any agent is in the tile the agent wants to go to and handles collisions accordingly.
+ * If a collision is detected, it sets the colliding state and starts a timer.
+ * If the timer expires, it gets a new path or base path based on the last intention.
+ * If everything is clear, it performs one step of the agent path.
+ * The method updates the agent's state to reflect the one-step check, and it logs the action based on whether it is a master or slave agent.
+ */
   async oneStepCheckAgents(newPathTile) {
 
     if (this.pathIndex >= this.path.length) {
@@ -445,9 +604,20 @@ export class MultiAgent {
     await this.oneStep();
   }
 
-  /**
-   * Performs one step of the agent path, updating the path index
-   */
+/**
+ * Performs one step of the agent path.
+ * It moves the agent towards the next tile in the path and updates the path index.
+ * If the agent is already at the destination tile, it does nothing.
+ * @description
+ * This method performs one step of the agent path by moving the agent towards the next tile in the path.
+ * It checks if the agent is already at the destination tile and does nothing if it is.
+ * If the agent is not at the destination tile, it calculates the direction to move and performs the move action.
+ * The method updates the agent's state to reflect the movement and increments the path index.
+ * It also sets the moving state to false after the move is completed.
+ * The method logs the action based on whether it is a master or slave agent.
+ * @example
+ * agent.oneStep();
+ */
   async oneStep() {
     if (this.pathIndex >= this.path.length) {
       this.lastIntention = { type: null };
@@ -468,8 +638,16 @@ export class MultiAgent {
   }
 
   /**
-   * Get A* path
-   * @param {{x : number, y : number}} target 
+   * Gets the A* path to the target tile.
+   * It initializes the path index and calculates the path using the astarSearch function.
+   * @param {{x : number, y : number}} target - The target tile to get the path to.
+   * @description
+   * This method is responsible for getting the A* path to the specified target tile.
+   * It initializes the path index to 0 and calculates the path using the astarSearch function.
+   * The calculated path is stored in the `this.path` variable, which is later used for movement actions.
+   * The method ensures that the agent has a valid path to follow towards the target tile.
+   * @example
+   * agent.getPath({ x: 5, y: 10 });
    */
   getPath(target) {
     this.pathIndex = 0;
@@ -477,8 +655,16 @@ export class MultiAgent {
   }
 
   /**
-   * Get A* path, removing visible agents
-   * @param {{x : number, y : number}} target 
+   * Gets a new A* path to the target tile, removing visible agents from the map.
+   * It initializes the path index and calculates the path using the astarSearch function.
+   * @param {{x : number, y : number}} target - The target tile to get the path to.
+   * @description
+   * This method is responsible for getting a new A* path to the specified target tile.
+   * It removes visible agents from the map to ensure that the pathfinding algorithm does not consider them as obstacles.
+   * The calculated path is stored in the `this.path` variable, which is later used for movement actions.
+   * The method ensures that the agent has a valid path to follow towards the target tile, even in the presence of other agents.
+   * @example
+   * agent.getNewPath({ x: 5, y: 10 });
    */
   getNewPath(target) {
     this.pathIndex = 0;
@@ -500,10 +686,21 @@ export class MultiAgent {
     }
   }
 
-  /**
-   * Get A* path to base, removing visible agents
-   * @param {{x : number, y : number}} target 
-   */
+/**
+ * Gets the base path to the nearest base tile.
+ * It checks if the agent is already at the base tile and returns if so.
+ * If the agent is not at the base tile, it gets a new path to the nearest base using the getNewPath method.
+ * If the base tile is not found, it removes the base from the map and sets a timer to restore it later.
+ * @param {{x : number, y : number}} target - The target tile to get the base path to.
+ * @description
+ * This method is responsible for getting the base path to the nearest base tile.
+ * It checks if the agent is already at the base tile and returns if so.
+ * If the agent is not at the base tile, it gets a new path to the nearest base using the getNewPath method.
+ * If the base tile is not found, it removes the base from the map and sets a timer to restore it later.
+ * The method ensures that the agent has a valid path to follow towards the nearest base tile, even if the base is temporarily removed from the map.
+ * @example
+ * agent.getBasePath({ x: 5, y: 10 });
+ */
   getBasePath(target) {
     let tries = 0;
 

@@ -2,7 +2,17 @@ import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import config from "../../config.js";
 import { ParcelsStore } from "../models/parcelsStore.js";
 
-
+/**
+ * DeliverooClient class for interacting with the Deliveroo API.
+ * @class
+ * @description
+ * This class is used to send and receive events related to the game.
+ * It allows the agent to move, pick up parcels, drop off parcels, and receive updates about the game state.
+ * It is typically used at the start of the game to set up the client with the agent's ID and to listen for events from the server.
+ * @param {boolean} isMaster - Indicates whether this client is the master or slave.
+ * @example
+ * const client = new DeliverooClient(true);
+ */
  class DeliverooClient {
   /**
    * Creates an instance of DeliverooClient.

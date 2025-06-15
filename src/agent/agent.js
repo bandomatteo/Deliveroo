@@ -16,15 +16,39 @@ import config from "../utils/gameConfig.js";
 import { ioTypedSocket } from "@unitn-asa/deliveroo-js-client";
 import gameConfig from "../utils/gameConfig.js";
 
+/**
+ * Agent class representing an agent in the game.
+ * This class encapsulates the agent's beliefs, desires, intentions, and pathfinding logic.
+ * It interacts with the game server through a client and manages its own state, including movement, exploration, and collision handling.
+ * @class
+ * @param {DeliverooClient} client - The client to communicate with the server.
+ * @param {Me} me - The agent's own data, including its position and state.
+ * @param {ParcelsStore} parcels - The parcels store to manage parcels in the game.
+ * @param {MapStore} mapStore - The map store to manage the game map.
+ * @param {AgentStore} agentStore - The agent store to manage other agents in the game.
+ * @param {ServerConfig} serverConfig - The server configuration containing game settings.
+ * @description
+ * The Agent class is responsible for managing the agent's actions and interactions within the game.
+ * It maintains the agent's beliefs, desires, and intentions, and uses pathfinding algorithms to navigate the game map.
+ * The agent can perform actions such as picking up parcels, depositing them at bases, and exploring the map.
+ * It also handles agent collisions and camping behavior based on the game state.
+ * The agent's actions are logged for debugging and analysis purposes.
+ */
 export class Agent {
-  /**
-   * @param {DeliverooClient} client
-   * @param {Me}              me
-   * @param {ParcelsStore}    parcels
-   * @param {MapStore}        mapStore
-   * @param {AgentStore}      agentStore
-   * @param {ServerConfig}    serverConfig
-   */
+ /**
+  * Agent constructor
+  * @param {*} client - The client to communicate with the server
+  * @param {Me} me - The agent's own data
+  * @param {ParcelsStore} parcels - The parcels store to manage parcels
+  * @param {MapStore} mapStore - The map store to manage the game map
+  * @param {AgentStore} agentStore - The agent store to manage other agents
+  * @param {ServerConfig} serverConfig - The server configuration
+  * @constructor
+  * @description
+  * This constructor initializes the agent with the provided client, own data, parcels, map store, agent store, and server configuration.
+  * It sets up the agent's beliefs, desires, intentions, and pathfinding structures.
+  * It also initializes various flags and timers for movement, exploration, camping, and agent collision handling.
+  */
   constructor(client, me, parcels, mapStore, agentStore, serverConfig) {
     this.client = client;
     this.me = me;
@@ -59,16 +83,35 @@ export class Agent {
 
     // Log section
     this.logLevels = [];
-    // this.logLevels.push(LOG_LEVELS.MASTER);
-    // this.logLevels.push(LOG_LEVELS.ACTION);
   }
 
 
+  /**
+   * Logs messages based on the provided log level and arguments.
+   * @param {string} logLevel - The log level to filter messages (e.g., LOG_LEVELS.MASTER, LOG_LEVELS.ACTION)
+   * @param {...*} args - The arguments to log, can be any type (string, object, etc.)
+   * @returns {void}
+   * @description
+   * This method checks if the provided log level is included in the agent's log levels.
+   * If it is, it calls the `log` function with the log levels, log level, and arguments.
+   * This allows for flexible logging of messages based on the agent's current log configuration.
+   * @example
+   * agent.log(LOG_LEVELS.MASTER, "This is a master log message");
+   * @example
+   * agent.log(LOG_LEVELS.ACTION, "This is an action log message", { somjeData: 123 });
+   */
   log(logLevel, ...args) {
     log(this.logLevels, logLevel, ...args);
   }
 
-
+/**
+ * Updates the agent's beliefs based on the current state of the game.
+ * This method calculates the frame difference since the last update, updates the parcels data,
+ * and updates the agent's beliefs about the game state.
+ * @returns {void}
+ * @description
+ * This method is typically called in each game loop to keep the agent's beliefs up-to-date with the current game state.
+ */
   updateBeliefs() {
     // Get frame difference
     if (this.oldTime === null) {
@@ -81,10 +124,18 @@ export class Agent {
     this.parcels.updateData(timeDiff / 1000, this.me.frame, this.agentStore.map.size, this.serverConfig);
   }
 
-  /**
-    * Filter options into current desires based on state:
-    * Generate all possible desires (pickup and deposit) and let the agent choose the best one
-    */
+ /**
+  * Generates desires for the agent based on the current state of the game.
+  * This method evaluates the available parcels, calculates potential rewards for picking them up,
+  * and considers depositing carried parcels at the nearest base.
+  * @description
+  * This method is called to determine the agent's desires, which are then used to form intentions.
+  * It evaluates the agent's current state, including carried parcels and their rewards,
+  * and generates a list of desires with associated scores.
+  * It also considers the agent's position on the map and the distance to available parcels.
+  * If the agent is carrying parcels, it will also consider depositing them at the nearest base.
+  * Finally, it adds an intention to explore if no other intentions are more desirable.
+  */
   generateDesires() {
     this.desires = [];
   
@@ -134,11 +185,26 @@ export class Agent {
   }
 
 
+  /**
+   * Filters the agent's intentions based on their scores.
+   * This method sorts the desires in descending order of their scores and updates the intentions list.
+   * @description
+   * This method is typically called after generating desires to prioritize the most desirable actions for the agent.
+   * It ensures that the agent acts on the most valuable intentions first, based on their calculated scores.
+   */
   filterIntentions() {
     this.intentions = this.desires.sort((a, b) => { return b.score - a.score });
   }
 
 
+  /**
+   * Acts on the agent's intentions.
+   * This method iterates through the agent's intentions and performs actions based on their types.
+   * It handles pickup, deposit, and exploration intentions, checking for conditions such as agent visibility and parcel availability.
+   * @description
+   * This method is called in each game loop to execute the agent's intentions based on the current game state.
+   * It ensures that the agent acts on its most pressing intentions while considering the environment and other agents.
+   */
   async act() {
     for (let intentionIndex = 0; intentionIndex < this.intentions.length; intentionIndex++) {
 
@@ -194,6 +260,18 @@ export class Agent {
     }
   }
 
+  /**
+   * Achieves the pickup of a parcel.
+   * This method moves the agent towards the specified parcel and attempts to pick it up.
+   * @param {Object} p - The parcel to be picked up, containing its coordinates and ID.
+   * @param {boolean} isEqualToLastIntention - Indicates if the current intention is the same as the last one.
+   * @param {boolean} isFromDropped - Indicates if the pickup is from a dropped parcel.
+   * @description
+   * This method is called when the agent intends to pick up a parcel.
+   * It checks if the agent is already at the parcel's location and emits a pickup event if so.
+   * If the agent is not at the parcel's location, it calculates a new path towards the parcel and checks for collisions with other agents.
+   * If the agent reaches the parcel's coordinates, it emits a pickup event to the server.
+   */
   async achievePickup(p, isEqualToLastIntention, isFromDropped) {
     
     this.log(LOG_LEVELS.MASTER, "GO_PICKUP");
@@ -210,6 +288,16 @@ export class Agent {
     }
   }
 
+  /**
+   * Achieves the deposit of parcels at the nearest base.
+   * This method moves the agent towards the nearest base and attempts to deposit carried parcels.
+   * @param {boolean} isEqualToLastIntention - Indicates if the current intention is the same as the last one.
+   * @description
+   * This method is called when the agent intends to deposit parcels.
+   * It checks if the agent is already at the nearest base and emits a putdown event if so.
+   * If the agent is not at the base, it calculates a new path towards the base and checks for collisions with other agents.
+   * If the agent reaches the base's coordinates, it emits a putdown event to deposit the carried parcels.
+   */
   async achieveDeposit(isEqualToLastIntention) {
     
     this.log(LOG_LEVELS.MASTER, "GO_DEPOSIT");
@@ -232,6 +320,18 @@ export class Agent {
     }
   }
 
+  /**
+   * Achieves the exploration of the map.
+   * This method moves the agent towards a random spawn tile and checks for camping conditions.
+   * If the agent is camping, it will perform random movements until the camping conditions are no longer met.
+   * @param {boolean} isEqualToLastIntention - Indicates if the current intention is the same as the last one.
+   * @description
+   * This method is called when the agent intends to explore the map.
+   * It checks if the agent is camping on a spawn tile and updates the camping state based on the elapsed time.
+   * If the agent is not camping, it calculates a new path towards a random spawn tile and checks for collisions with other agents.
+   * If the agent reaches the spawn tile, it will either continue exploring or camp based on the spawn's sparsity.
+   * If the agent is camping, it will perform random movements until the camping conditions are no longer met.
+   */
   async achieveExplore(isEqualToLastIntention) {
 
     this.log(LOG_LEVELS.MASTER, "EXPLORE");
@@ -275,10 +375,19 @@ export class Agent {
     }
   }
 
-  /**
-   * Performs one step of the agent path, checking if there are collision with other agents
-   * @param {{x : number, y : number}} newPathTile
-   */
+/**
+ * Checks for agent collisions and performs one step of the agent's path.
+ * This method checks if the agent is colliding with another agent in the next tile of its path.
+ * If a collision is detected, it sets the colliding flag and starts a timer.
+ * If the timer expires, it gets a new path based on the last intention.
+ * If there are no collisions, it performs one step of the agent's path.
+ * @param {Object} newPathTile - The tile to which the agent should move if a collision is detected.
+ * @description
+ * This method is called in each game loop to handle agent movement and collision detection.
+ * It ensures that the agent can navigate the map while avoiding collisions with other agents.
+ * If a collision is detected, it will wait for a specified time before attempting to get a new path.
+ * If no collisions are detected, it will proceed with the next step in the agent's path.
+ */
   async oneStepCheckAgents(newPathTile) {
 
     if (this.pathIndex >= this.path.length) {
@@ -341,9 +450,15 @@ export class Agent {
     await this.oneStep();
   }
 
-  /**
-   * Performs one step of the agent path, updating the path index
-   */
+/**
+ * Performs one step of the agent's path.
+ * This method moves the agent towards the next tile in its path and updates the path index.
+ * If the agent has reached the end of its path, it resets the last intention.
+ * @description
+ * This method is called in each game loop to move the agent towards its next destination.
+ * It calculates the direction to the next tile in the path and performs the movement action.
+ * If the agent has reached the end of its path, it resets the last intention to indicate that no further action is needed. 
+ */
   async oneStep() {
     if (this.pathIndex >= this.path.length) {
       this.lastIntention = { type: null };
@@ -363,19 +478,33 @@ export class Agent {
     this.pathIndex++;
   }
 
-  /**
-   * Get A* path
-   * @param {{x : number, y : number}} target 
-   */
+/**
+ * Get A* path to a target tile
+ * @param {{x : number, y : number}} target - The target coordinates to which the agent should find a path.
+ * @description
+ * This method calculates a path from the agent's current position to the specified target using the A* algorithm.
+ * It initializes the path index to 0 and stores the calculated path in the agent's path property.
+ * The path is used to determine the agent's movement towards the target tile.
+ * @example
+ * agent.getPath({ x: 5, y: 10 });
+ */
   getPath(target) {
     this.pathIndex = 0;
     this.path = astarSearch({ x: Math.round(this.me.x), y: Math.round(this.me.y) }, target, this.mapStore);
   }
 
-  /**
-   * Get A* path, removing visible agents
-   * @param {{x : number, y : number}} target 
-   */
+/**
+ * Get A* path to a target tile, removing visible agents from the map
+ * @param {{x : number, y : number}} target - The target coordinates to which the agent should find a path.
+ * @description
+ * This method calculates a path from the agent's current position to the specified target using the A* algorithm.
+ * It initializes the path index to 0 and temporarily removes visible agents from the map to avoid collisions.
+ * The path is then calculated and stored in the agent's path property.
+ * After the path is calculated, the removed agents are restored to their original tile types.
+ * This allows the agent to find a path without being blocked by other agents while still considering their presence in the game.
+ * @example
+ * agent.getNewPath({ x: 5, y: 10 });
+ * */
   getNewPath(target) {
     this.pathIndex = 0;
 
@@ -397,8 +526,17 @@ export class Agent {
   }
 
   /**
-   * Get A* path to base, removing visible agents
-   * @param {{x : number, y : number}} target 
+   * Get a path to the nearest base, removing the current base from the map if necessary.
+   * @param {{x : number, y : number}} target - The target coordinates of the nearest base to which the agent should find a path.
+   * @description
+   * This method attempts to find a path to the nearest base tile.
+   * If the agent is already at the target base, it returns immediately.
+   * If the agent is not at the target base, it checks if the path to the base is clear.
+   * If the path is not clear, it removes the current base from the map and waits for a specified time before restoring it.
+   * It then finds a new target base and recalculates the path to it.
+   * This process continues until a valid path is found or the maximum number of tries is reached.
+   * @example
+   * agent.getBasePath({ x: 10, y: 15 });
    */
   getBasePath(target) {
     let tries = 0;

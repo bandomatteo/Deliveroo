@@ -1,5 +1,11 @@
+
 /**
- * Manages the server configuration
+ * ServerConfig class to manage server configuration settings.
+ * @class ServerConfig
+ * @description
+ * This class is used to manage the server configuration settings for the game.
+ * It includes properties such as parcels_max, parcel_reward_avg, parcels_decaying_interval, clock,
+ * agents_obs_distance, and parcels_obs_distance.
  */
 export class ServerConfig {
     constructor() {
@@ -11,7 +17,14 @@ export class ServerConfig {
         this.parcels_obs_distance = 0;
     }
     
-
+    /**
+     * Update the server configuration with new settings.
+     * @param {Object} config - The configuration object containing new settings.
+     * @description
+     * This method updates the server configuration properties based on the provided config object.
+     * It sets the maximum number of parcels, average parcel reward, decaying interval for parcels,
+     * clock time, and observation distances for agents and parcels.
+     */
     updateConfig(config) {
         this.parcels_max = config.PARCELS_MAX;
         this.parcel_reward_avg = config.PARCEL_REWARD_AVG;

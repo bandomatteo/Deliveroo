@@ -9,7 +9,14 @@ import { Communication } from "./models/communication.js";
 import config from './utils/gameConfig.js';
 import { Agent } from "./agent/agent.js";
 
-
+/**
+ * Main function to initialize the Deliveroo client, models, and agent.
+ * It sets up event listeners for client events and runs the agent's decision-making loop.
+ * The agent updates its beliefs, generates desires, filters intentions, and acts based on the current state of the game.
+ * The loop continues until the game is terminated, allowing the agent to continuously adapt to the game environment.
+ * @async
+ * @function main
+ */
 async function main() {
   console.log("Creating clients...");
   const client = new DeliverooClient(true);
