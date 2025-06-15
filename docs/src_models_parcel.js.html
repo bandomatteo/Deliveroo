@@ -4,6 +4,8 @@
 import { MapStore } from "./mapStore.js";
 import { ServerConfig } from "./serverConfig.js";
 import config from "../utils/gameConfig.js"
+import { ParcelsStore } from "./parcelsStore.js";
+
 
 /**
  * Parcel class to represent a parcel in the game
@@ -11,7 +13,22 @@ import config from "../utils/gameConfig.js"
  * @description
  * This class is used to represent a parcel in the game.
  * It contains properties such as id, carriedBy, x, y, reward, baseDistance, lastSeen, existingProb, nearestBase,
- * potentialPickUpReward, and potentialPickUpRewardSlave.
+ * potentialPickUpReward, and potentialPickUpRewardSlave
+ * @param {Object} parcel - The parcel object containing id, carriedBy, x, y, reward
+ * @param {MapStore} mapStore - The MapStore instance containing the bases
+ * @param {number} frame - The current frame number
+ * @param {ParcelsStore} parcelStore - The ParcelStore instance managing parcels
+ * @property {string} id - The unique identifier of the parcel.
+ * @property {string|null} carriedBy - The ID of the agent currently carrying the parcel, or null if not carried.
+ * @property {number} x - The x-coordinate of the parcel's position.
+ * @property {number} y - The y-coordinate of the parcel's position.
+ * @property {number} reward - The reward value of the parcel.
+ * @property {number} baseDistance - The distance to the nearest base for this parcel.
+ * @property {number} lastSeen - The frame number when the parcel was last seen.
+ * @property {number} existingProb - The survival probability of the parcel based on the last seen frame and agent count.
+ * @property {{x: number, y: number}|null} nearestBase - The coordinates of the nearest base to the parcel, or null if not applicable.
+ * @property {number} potentialPickUpReward - The potential reward for picking up the parcel (for master instance).
+ * @property {number} potentialPickUpRewardSlave - The potential reward for picking up the parcel (for slave instance).
  */
 export class Parcel {
     constructor(parcel, mapStore, frame, parcelStore) {

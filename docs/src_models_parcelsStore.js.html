@@ -12,6 +12,12 @@ import { ServerConfig } from "./serverConfig.js";
  * @description
  * This class is responsible for managing parcels in the game.
  * It allows adding, removing, and updating parcels, as well as retrieving available parcels and those carried by players.
+ * It uses a Map to store parcels, where the key is the parcel's ID and the value is an instance of Parcel.
+ * @property {Map} map - A Map to store parcels, where the key is the parcel's ID and the value is a Parcel instance.
+ * @property {Me} me - The local player object
+ * @property {Array} parcelsArray - Array of parcel objects to update the store with
+ * @property {MapStore} mapStore - The MapStore instance containing the game map
+ * @property {ServerConfig} config - The server configuration object
  */
 export class ParcelsStore {
     constructor() {
