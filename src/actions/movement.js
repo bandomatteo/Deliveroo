@@ -247,7 +247,18 @@ export async function moveToNearestBase(client, me, mapStore) {
 }
 
 
-
+/**
+ * Moves the agent to a random spawn tile using A* search algorithm.
+ * @param {DeliverooClient} client - The Deliveroo client instance.
+ * @param {Me} me - The current player instance.
+ * @param {MapStore} mapStore - The MapStore instance containing the current map state.
+ * @returns {Promise<boolean>} - Returns true if successfully moved to a spawn tile, false otherwise.
+ * @description
+ * This function finds a random spawn tile on the map and uses the A* search algorithm to calculate
+ * the path to that tile. It then moves the agent in the direction of each step in the path.
+ * If a valid path is found, it moves the agent step by step. If no spawn tile is found or no valid
+ * path exists, it logs an error message and returns false. 
+ */
 export async function easyExplore(client, me, mapStore) {
   let spawnTileCoord = mapStore.randomSpawnTile(me);
   const fullPath = astarSearch(me, spawnTileCoord, mapStore);
