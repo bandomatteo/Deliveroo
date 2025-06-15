@@ -1,6 +1,6 @@
 
 <p align="center">
-<img src="img/logo.png" alt="Alt Text" width="300" height="300">
+<img src="https://raw.githubusercontent.com/bandomatteo/Deliveroo/refs/heads/dev/img/logo.png" alt="Alt Text" width="300" height="300">
 </p>
 
 # 🚀 Deliveroo

@@ -20,19 +20,19 @@ import config from '../utils/gameConfig.js';
 export class MapStore {
 
     constructor() {
-        /**
-         * @type { Map< string, number > }
-         */
+
+        // @type { Map< string, number > }
+
         this.map = new Map();
 
-        /**
-         * @type { Set< string > }
-         */
+
+        // @type { Set< string > }
+
         this.bases = new Set();
 
-        /**
-         * @type { Map< string, {coord: string, assignedTo: string, available : boolean } >}
-         */
+
+        //@type { Map< string, {coord: string, assignedTo: string, available : boolean } >}
+
         this.spawnTiles = new Map();
 
         this.mapSize = null;
@@ -42,7 +42,7 @@ export class MapStore {
 
         this.isSpawnSparse = false; // Check is spawn tiles are sparse
     }
-  
+
     /**
      * Adds a tile to the map and updates spawn tiles and bases accordingly.
      * @param {Object} tile - The tile object containing coordinates and type.
@@ -50,13 +50,13 @@ export class MapStore {
      * This method adds a tile to the map, updates the spawn tiles if the tile is a spawn tile,
      * and adds the tile to the bases set if it is a base tile.
      */
-    addTile (tile) {
+    addTile(tile) {
         const key = coord2Key(tile)   // Converted to string because js handles object by reference
 
         this.map.set(key, tile.type);
-        
+
         if (tile.type === TILE_TYPES.SPAWN) {
-            this.spawnTiles.set(key, {coord: key, assignedTo: null, available : true});
+            this.spawnTiles.set(key, { coord: key, assignedTo: null, available: true });
         }
         else if (tile.type === TILE_TYPES.BASE) {
             this.bases.add(key);
@@ -120,11 +120,11 @@ export class MapStore {
      */
     randomSpawnTile(me) {
         let tileArr = Array
-                    .from(this.spawnTiles.values())
-                    .filter(t => isFinite(this.distance(me, key2Coord(t.coord))))
-                    .filter(t => t.available)
-                    .filter(t => t.assignedTo === me.id || t.assignedTo === null);
-        
+            .from(this.spawnTiles.values())
+            .filter(t => isFinite(this.distance(me, key2Coord(t.coord))))
+            .filter(t => t.available)
+            .filter(t => t.assignedTo === me.id || t.assignedTo === null);
+
         let tile = tileArr[Math.floor(Math.random() * tileArr.length)];
         return key2Coord(tile.coord);
     }
@@ -144,17 +144,17 @@ export class MapStore {
         if (this.mapSize === null) {
             throw new Error("Map size is null");
         }
-        
+
         // 1. Collect all valid (non-hole) positions
         const cells = [];
         this.indexOf = new Map();
         for (let x = 0; x < this.mapSize; x++) {
             for (let y = 0; y < this.mapSize; y++) {
-                const key = coord2Key({x,y});
+                const key = coord2Key({ x, y });
 
                 if (this.map.get(key) !== TILE_TYPES.EMPTY) {
                     const idx = cells.length;
-                    cells.push({x,y});
+                    cells.push({ x, y });
                     this.indexOf.set(key, idx);
                 }
             }
@@ -170,7 +170,7 @@ export class MapStore {
             const { x, y } = cells[i];
 
             // only 4 neighbors on a grid
-            for (const { dx, dy } of [ {dx:1,dy:0}, {dx:-1,dy:0}, {dx:0,dy:1}, {dx:0,dy:-1} ]) {
+            for (const { dx, dy } of [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }]) {
                 const nx = x + dx, ny = y + dy;
                 const nKey = coord2Key({ x: nx, y: ny });
 
@@ -221,7 +221,7 @@ export class MapStore {
         if (fromIdx === undefined || toIdx === undefined) {
             return Infinity;
         }
-        
+
         return this.distMat[fromIdx][toIdx];
     }
 
@@ -266,11 +266,11 @@ export class MapStore {
      */
     calculateSparseness(serverConfig) {
         const numCells = Array.from(this.map.values())
-                            .filter(type => type > TILE_TYPES.EMPTY)
-                            .length;
+            .filter(type => type > TILE_TYPES.EMPTY)
+            .length;
         const greenCellRatio = this.spawnTiles.size / numCells;
-        const spawnRatio =  this.spawnTiles.size / serverConfig.parcels_max;  // Vogliamo un ratio < 3 (Es. 10 parcels su 30 spawn tiles)
-        
+        const spawnRatio = this.spawnTiles.size / serverConfig.parcels_max;  // Vogliamo un ratio < 3 (Es. 10 parcels su 30 spawn tiles)
+
         this.isSpawnSparse = greenCellRatio < config.MAX_GREEN_CELL_RATIO && spawnRatio < config.MAX_SPAWN_RATIO;
     }
 
@@ -293,17 +293,17 @@ export class MapStore {
 
         // Create k prototypes with random values
 
-        
+
         // @type {Array < {x: number, y: number} > }
-         
+
         let prototypes = new Array(k);
         for (let i = 0; i < k; i++)
-            prototypes[i] = {x : Math.random() * this.mapSize, y : Math.random() * this.mapSize};
+            prototypes[i] = { x: Math.random() * this.mapSize, y: Math.random() * this.mapSize };
 
         // Array for calculating means
-        
+
         // @type {Array < {x: number, y: number} > }
-         
+
         let sums = new Array(k);
 
         let counts = new Array(k);
@@ -313,18 +313,18 @@ export class MapStore {
 
         // Loop until prototypes are stable
         for (let iteration_count = 0; !bound_reached && iteration_count < max_iterations; iteration_count++) {
-            
+
             old_prototypes = structuredClone(prototypes);
 
             // Resetting sums and counts
             for (let i = 0; i < k; i++)
-                sums[i] = {x: 0, y: 0};
+                sums[i] = { x: 0, y: 0 };
             counts.fill(0);
 
             // Associate each tile to nearest prototype (with Euclidian distance)
             for (let tile of this.spawnTiles.values()) {
                 let coords = key2Coord(tile.coord);
-                
+
                 let min_distance = Infinity;
                 let assigned_prototype_index = -1;
 
@@ -401,12 +401,11 @@ export class MapStore {
 
                 for (let k = 0; k < this.mapSize; k++) {
                     for (let h = 0; h < this.mapSize; h++) {
-                        console.log("\t", k, ", ", h, " -> ", this.distance({x : i, y : j}, {x : k, y : h}));
+                        console.log("\t", k, ", ", h, " -> ", this.distance({ x: i, y: j }, { x: k, y: h }));
                     }
                 }
             }
         }
     }
-    
-  }
-  
+
+}

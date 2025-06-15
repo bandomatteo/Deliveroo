@@ -15,6 +15,7 @@ import config from './utils/gameConfig.js';
  * The agents update their beliefs, generate desires, filter intentions, and act based on the current state of the game.
  * The loop continues until the game is terminated, allowing the agents to continuously adapt to the game environment.
  * @async
+ * @function mainMulti
  */
 async function main() {
   console.log("Creating clients...");
