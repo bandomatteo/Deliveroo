@@ -231,38 +231,55 @@ export async function moveToNearestBase(client, me, mapStore) {
         return false;
     }
 
-    const firstStep = fullPath[0];
-    const dir = direction(me, firstStep);
-    if (!dir) {
+    for (const step of fullPath)
+    {
+      const dir = direction(me, step);
+
+      if (!dir) {
         console.log("Couldn't determine direction");
         return false;
+      }
+
+      await moveAndWait(client, me, dir);
     }
 
-    await moveAndWait(client, me, dir);
     return true;
 }
 
-/**
-  * Exits the current base by setting the tile type to WALKABLE and then moving to the nearest base.
-  * After moving, it resets the tile type back to BASE.
-  * @param {DeliverooClient} client - The Deliveroo client instance.
-  * @param {Me} me - The current player instance.
-  * @param {MapStore} mapStore - The MapStore instance containing the current map state.
-  * @returns {Promise<boolean>} - Returns true if successfully moved to a new base, false otherwise.
-  * @description
-  * This function is used to exit the current base by first marking the tile as WALKABLE,
-  * then finding the nearest base and moving towards it. After the move, it resets the tile type
-  * back to BASE. This is useful for scenarios where the player needs to leave the current base
-  * and find a new one, ensuring that the map state is correctly updated.
-  */ 
-export async function exitCurrentBase(client, me, mapStore) {
-    const baseCoord = { x: me.x, y: me.y };
-    mapStore.setType(baseCoord, TILE_TYPES.WALKABLE);
 
-    try {
-        return await moveToNearestBase(client, me, mapStore);
-    } finally {
-        mapStore.setType(baseCoord, TILE_TYPES.BASE);
+/**
+ * Moves the agent to a random spawn tile using A* search algorithm.
+ * @param {DeliverooClient} client - The Deliveroo client instance.
+ * @param {Me} me - The current player instance.
+ * @param {MapStore} mapStore - The MapStore instance containing the current map state.
+ * @returns {Promise<boolean>} - Returns true if successfully moved to a spawn tile, false otherwise.
+ * @description
+ * This function finds a random spawn tile on the map and uses the A* search algorithm to calculate
+ * the path to that tile. It then moves the agent in the direction of each step in the path.
+ * If a valid path is found, it moves the agent step by step. If no spawn tile is found or no valid
+ * path exists, it logs an error message and returns false. 
+ */
+export async function easyExplore(client, me, mapStore) {
+  let spawnTileCoord = mapStore.randomSpawnTile(me);
+  const fullPath = astarSearch(me, spawnTileCoord, mapStore);
+
+  if (!fullPath?.length) {
+    console.log("No valid path to spawn tile");
+    return false;
+  }
+
+  for (const step of fullPath)
+  {
+    const dir = direction(me, step);
+
+    if (!dir) {
+      console.log("Couldn't determine direction");
+      return false;
     }
+
+    await moveAndWait(client, me, dir);
+  }
+
+  return true;
 }
 
