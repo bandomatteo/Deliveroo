@@ -33,8 +33,8 @@ async function main() {
   const serverConfig = new ServerConfig();
   const communication = new Communication();
 
-  const agent1 = new MultiAgent(client1, me1, me2, parcels, mapStore, agentStore,communication, serverConfig, true);
-  const agent2 = new MultiAgent(client2, me2, me1, parcels, mapStore, agentStore, communication, serverConfig, false);
+const agent1 = new MultiAgent(client1, me1, me2, parcels, mapStore, agentStore,communication, serverConfig, true);
+const agent2 = new MultiAgent(client2, me2, me1, parcels, mapStore, agentStore, communication, serverConfig, false);
 
   client1.onYou((payload, time) => {
     me1.update(payload, time);

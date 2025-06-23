@@ -64,6 +64,6 @@ export function getPickupScore(startPos, goalPos, carriedValue, carriedCount, re
 
     const totalParcels = carriedCount + pickupCount;
 
-    // reward potenziale: reward totale - costo temporale del viaggio
+    // Potential reward: total reward - temporal cost to bring the parcel to the base
     return totalReward - (totalDistance * totalParcels * clockPenalty / configuration.parcels_decaying_interval);
 }

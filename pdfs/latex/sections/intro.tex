@@ -1,0 +1,17 @@
+Deliveroo.js is a two-dimensional, grid-based parcel‐delivery game designed to offer an interactive environment where autonomous agents compete to achieve the highest score while dynamically refining their planning strategies.
+
+\bigskip
+
+\textbf{Map and Environment:} at the start of each match, agents are placed on a map represented by a grid: each cell is either walkable or blocked. Walkable cells may also serve as delivery zones or parcel spawning sites. On a parcel-spawning cell, packages appear at random intervals, each carrying a point value that, depending on the game’s configuration, may decay over time.
+
+\bigskip
+
+\textbf{Parcel Handling:} to pick up a parcel, an agent must move onto its cell and execute a pick-up action; to deliver it, the agent transports it to a delivery zone and performs a drop-off. Agents can carry an unlimited number of parcels, but they only earn the points corresponding to each parcel's value at the moment of delivery, and any parcel whose timer reaches zero disappears immediately.
+
+\bigskip
+
+\textbf{Game Modes:} the game can be played in free-for-all mode, where every agent competes individually, or in team mode, where teams of agents collaborate. The objective in all modes is to accumulate the highest total score on the map.
+
+\bigskip
+
+\textbf{Match Configuration:} at the beginning of every round, all clients receive a configuration file that defines the map matrix and sets all relevant parameters, such as the observation distance or the server clock, for that specific match.

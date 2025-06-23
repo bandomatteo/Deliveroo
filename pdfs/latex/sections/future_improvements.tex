@@ -1,0 +1,12 @@
+Building on our DEAR framework, we can further enhance the system’s robustness, performance, and scalability:
+
+\paragraph{Hybrid approach}
+    Use the PDDL solver only for a small part of the code, using more plain javascript and enabling to have more control over the agent.
+    In this way the agent can be more complicated without changing much of the domain representation.
+
+\paragraph{Embed a local PDDL solver} 
+    Replace the remote API calls with an embedded planner running in-process.  
+    This removes network-induced delays and world-drift inconsistencies, guarantees data coherence, and enables tighter integration between the planner and the world model.
+
+\vspace{0.7cm}
+We think that  adopting this change will dramatically reduce latency, eradicate API-related synchronization errors, and lay the foundation for a more resilient, high-throughput multi-agent planning platform.

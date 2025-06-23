@@ -1,0 +1,118 @@
+After building the \texttt{single} and \texttt{multi-Agents} another agent was created to assert the capabilities of the \texttt{PDDL} domain.
+
+The new agent is almost entirely made up of \texttt{PDDL} code, and run on an online solver. It implicitly uses the \texttt{BDI} architecture, still sensing the environment, updating its belief, generating the desires to pick up and deposit parcels and generating a plan.
+
+\subsection{Problem}
+
+The automatically generated \texttt{deliveroo\_problem.pddl} file encapsulates one concrete snapshot of the game world that the planner must reason about. It follows the canonical PDDL layout:
+
+\begin{enumerate}
+  \item \textbf{(:objects)} declares every logical object that currently exists:
+    \begin{itemize}
+      \item the single agent (e.g., \textit{agent\_42});
+      \item one symbol per visible parcel (e.g., \textit{p\_17});
+      \item one symbol per known base (e.g., \textit{base\_1\_9});
+      \item every walkable map tile (e.g., \textit{t\_5\_4}).
+    \end{itemize}
+
+  \item \textbf{(:init)} lists the ground facts that are \emph{true right now}:
+    \begin{itemize}
+      \item \textit{(at agent\_42 t\_4\_4)} — the agent’s current position;
+      \item \textit{(parcel-at p\_17 t\_5\_4)} — parcel~\#17 is waiting on tile~$(5,4)$;
+      \item \textit{(base-at base\_1\_9 t\_1\_9)} — a base occupies tile~$(1,9)$;
+      \item \textit{ (adjacent t\_0\_2 t\_1\_2))} facts describing local connectivity.
+    \end{itemize}
+
+  \item \textbf{(\texttt{:goal})} a conjunctive goal that requires every currently known parcel to be delivered.
+
+\end{enumerate}
+
+All problem files are stored in the \texttt{PDDL} folder and are produced on the fly by \texttt{pddlTemplates\.js}.
+
+\subsection{Domain}
+
+Unlike the problem file, the domain file is \textbf{static}: it describes the immutable physics and rules of the \textbf{Deliveroo world}.
+
+\paragraph{Types}
+We have defined the following types:  \texttt{agent}, \texttt{parcel}, \texttt{base}, and \texttt{tile}.
+
+\paragraph{Predicates}
+\begin{itemize}
+  \item\textbf{(at ?a ?t)} agent \textbf{a} is located on tile \textbf{t}.
+  \item\textbf{(parcel-at ?p ?t)} parcel \textbf{p} is lying on tile \textbf{t}.
+  \item\textbf{(carrying ?a ?p)} agent \textbf{a} is currently holding parcel \textbf{p}.
+  \item\textbf{(base-at ?b ?t)} base \textbf{b} occupies tile \textbf{t}.
+  \item\textbf{(delivered ?p)} parcel \textbf{p} has been delivered and it is no longer in play.
+  \item\textbf{(adjacent ?t1 ?t2)} tiles \textbf{t1} and \textbf{t2} share an edge (undirected).
+\end{itemize}
+
+\paragraph{Actions}
+Below is the definition of the three  actions that we have defined
+\begin{itemize}[leftmargin=*]
+  \item \textbf{move( ?a, ?from, ?to )}
+    \begin{itemize}[leftmargin=1.5em]
+      \item \textbf{Preconditions:}
+        \begin{itemize}
+          \item (at ?a ?from)
+          \item (adjacent ?from ?to)
+        \end{itemize}
+      \item \textbf{Effects:}
+        \begin{itemize}
+          \item delete (at ?a ?from)
+          \item add    (at ?a ?to)
+        \end{itemize}
+      \item \textbf{Intuition:} The agent leaves the source tile and appears on the destination tile.
+    \end{itemize}
+
+  \item \textbf{pickup( ?a, ?p, ?t )}
+    \begin{itemize}[leftmargin=1.5em]
+      \item \textbf{Preconditions:}
+        \begin{itemize}
+          \item (at ?a ?t)
+          \item (parcel-at ?p ?t)
+        \end{itemize}
+      \item \textbf{Effects:}
+        \begin{itemize}
+          \item delete (parcel-at ?p ?t)
+          \item add    (carrying ?a ?p)
+        \end{itemize}
+      \item \textbf{Intuition:} The parcel is removed from the ground and held by the agent.
+    \end{itemize}
+
+  \item \textbf{deposit( ?a, ?p, ?b, ?t )}
+    \begin{itemize}[leftmargin=1.5em]
+      \item \textbf{Preconditions:}
+        \begin{itemize}
+          \item (at ?a ?t)
+          \item (base-at ?b ?t)
+          \item (carrying ?a ?p)
+        \end{itemize}
+      \item \textbf{Effects:}
+        \begin{itemize}
+          \item delete (carrying ?a ?p)
+          \item add    (delivered ?p)
+        \end{itemize}
+      \item \textbf{Intuition:} The parcel is dropped and marked as delivered.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{Limitations}
+Relying on an external PDDL solver brings two main challenges: network and solver latency, and world drift caused by the evolving game state. In the following, we first describe these issues in detail and then introduce our DEAR (Detect → Execution failure → Abort → Replan) approach as a remedy
+
+\subsubsection*{Core Challenges}
+
+The system relies on an external, online PDDL solver accessed via asynchronous API calls. When we request a plan:
+
+\begin{itemize}
+\item \textbf{Network and solver latency:} we must wait for the remote solver to compute and return a plan.
+\item \textbf{World drift:} during this waiting period, the game world continues to evolve (e.g., other agents may pick up parcels, tiles may become blocked), so the returned plan may refer to parcels or states that no longer exist.
+\end{itemize}
+
+\emph{Example:} at time \textit{$t_{0}$} the agent asks for a plan to pick up parcel \textit{p\_1} at \textit{tile (5,4)}. Due to latency, the solver’s plan arrives at \textit{$t_{2}$}, but in the meanwhile, parcel \textit{p\_1} has already been collected by another agent, invalidating the plan.
+
+\subsubsection*{Solution: DEAR }
+
+In our implementation, if the agent encounters an execution error,such as being unable to move because another agent now occupies the target tile (a situation not reflected in the previously generated plan), it immediately stops executing the current plan. Using the most recent world model stored in \texttt{MapStore}, \texttt{ParcelsStore}, and \texttt{AgentStore}, we then invoke \texttt{getPlan()} again to generate a new, up-to date plan.
+
+This approach, which we call \emph{DEAR}: {\textbf{Detect} $\rightarrow$ \textbf{Execution failure} $\rightarrow$ \textbf{Abort} $\rightarrow$   \textbf{Replan} guarantees that the agent never proceeds on outdated assumptions, providing robustness at the cost of additional solver calls.
